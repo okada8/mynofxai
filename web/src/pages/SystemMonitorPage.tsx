@@ -11,32 +11,7 @@ import { api } from '../lib/api' // Keep api import for other stats
 
 
 // Define interface locally to avoid import issues
-interface SystemStats {
-  os: string
-  arch: string
-  num_cpu: number
-  go_routines: number
-  memory_used: number
-  memory_total: number
-  memory_usage: number
-  disk_total: number
-  disk_used: number
-  disk_usage: number
-  cpu_load: number
-  cpu_temp: number
-  uptime: number
-  host_name: string
-  platform: string
-  kernel: string
-  containers?: {
-    id: string
-    name: string
-    image: string
-    state: string
-    status: string
-    created: number
-  }[]
-}
+import { SystemStats } from '../types'
 
 export function SystemMonitorPage() {
   console.log('[SystemMonitorPage] Rendered')

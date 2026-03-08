@@ -516,7 +516,7 @@ export interface GridStrategyConfig {
 }
 
 export interface CoinSourceConfig {
-  source_type: 'static' | 'ai500' | 'oi_top' | 'oi_low' | 'mixed';
+  source_type: 'static' | 'ai500' | 'oi_top' | 'oi_low' | 'mixed' | 'screener' | 'hyper_main' | 'hyper_all';
   static_coins?: string[];
   excluded_coins?: string[];   // 排除的币种列表
   use_ai500: boolean;
@@ -525,6 +525,13 @@ export interface CoinSourceConfig {
   oi_top_limit?: number;
   use_oi_low: boolean;
   oi_low_limit?: number;
+  use_screener: boolean;
+  screener_limit?: number;
+  screener_duration?: string;
+  screener_sort_by?: string;
+  use_hyper_main?: boolean;
+  hyper_main_limit?: number;
+  use_hyper_all?: boolean;
   // Note: API URLs are now built automatically using nofxos_api_key from IndicatorConfig
 }
 
@@ -875,4 +882,31 @@ export interface Task {
   next_run_time: number
   created_at: number
   updated_at: number
+}
+
+export interface SystemStats {
+  os: string
+  arch: string
+  num_cpu: number
+  go_routines: number
+  memory_used: number
+  memory_total: number
+  memory_usage: number
+  disk_total: number
+  disk_used: number
+  disk_usage: number
+  cpu_load: number
+  cpu_temp: number
+  uptime: number
+  host_name: string
+  platform: string
+  kernel: string
+  containers?: {
+    id: string
+    name: string
+    image: string
+    state: string
+    status: string
+    created: number
+  }[]
 }

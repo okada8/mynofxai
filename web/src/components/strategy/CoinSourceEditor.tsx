@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X, Database, TrendingUp, TrendingDown, List, Ban, Zap, Shuffle } from 'lucide-react'
+import { Plus, X, Database, TrendingUp, TrendingDown, List, Ban, Zap, Shuffle, Scan, Activity, BarChart2 } from 'lucide-react'
 import type { CoinSourceConfig } from '../../types'
 
 interface CoinSourceEditorProps {
@@ -25,6 +25,7 @@ export function CoinSourceEditor({
       ai500: { zh: 'AI500 数据源', en: 'AI500 Data Provider' },
       oi_top: { zh: 'OI 持仓增加', en: 'OI Increase' },
       oi_low: { zh: 'OI 持仓减少', en: 'OI Decrease' },
+      screener: { zh: '视觉筛选器', en: 'Visual Screener' },
       mixed: { zh: '混合模式', en: 'Mixed Mode' },
       staticCoins: { zh: '自定义币种', en: 'Custom Coins' },
       addCoin: { zh: '添加币种', en: 'Add Coin' },
@@ -34,6 +35,13 @@ export function CoinSourceEditor({
       oiTopLimit: { zh: '数量上限', en: 'Limit' },
       useOILow: { zh: '启用 OI 持仓减少榜', en: 'Enable OI Decrease' },
       oiLowLimit: { zh: '数量上限', en: 'Limit' },
+      useScreener: { zh: '启用视觉筛选器', en: 'Enable Visual Screener' },
+      screenerLimit: { zh: '数量上限', en: 'Limit' },
+      screenerDuration: { zh: '筛选周期', en: 'Duration' },
+      screenerSortBy: { zh: '排序指标', en: 'Sort By' },
+      oi: { zh: '持仓变化', en: 'OI Change' },
+      price: { zh: '价格变化', en: 'Price Change' },
+      vol: { zh: '成交量变化', en: 'Volume Change' },
       staticDesc: { zh: '手动指定交易币种列表', en: 'Manually specify trading coins' },
       ai500Desc: {
         zh: '使用 AI500 智能筛选的热门币种',
@@ -46,6 +54,10 @@ export function CoinSourceEditor({
       oi_lowDesc: {
         zh: '持仓减少榜，适合做空',
         en: 'OI decrease ranking, for short',
+      },
+      screenerDesc: {
+        zh: '基于 CoinAnk 视觉筛选器',
+        en: 'Based on CoinAnk Screener',
       },
       mixedDesc: {
         zh: '组合多种数据源',
@@ -69,6 +81,7 @@ export function CoinSourceEditor({
     { value: 'ai500', icon: Database, color: '#F0B90B' },
     { value: 'oi_top', icon: TrendingUp, color: '#0ECB81' },
     { value: 'oi_low', icon: TrendingDown, color: '#F6465D' },
+    { value: 'screener', icon: Scan, color: '#8B5CF6' },
     { value: 'mixed', icon: Shuffle, color: '#60a5fa' },
   ] as const
 
@@ -88,6 +101,10 @@ export function CoinSourceEditor({
     if (config.use_oi_low) {
       sources.push(`${language === 'zh' ? 'OI减' : 'OI↓'}(${config.oi_low_limit || 10})`)
       totalLimit += config.oi_low_limit || 10
+    }
+    if (config.use_screener) {
+      sources.push(`${language === 'zh' ? '筛选器' : 'Screener'}(${config.screener_limit || 10}/${config.screener_duration || '1h'}/${config.screener_sort_by || 'oi'})`)
+      totalLimit += config.screener_limit || 10
     }
     if ((config.static_coins || []).length > 0) {
       sources.push(`${language === 'zh' ? '自定义' : 'Custom'}(${config.static_coins?.length || 0})`)
@@ -491,6 +508,103 @@ export function CoinSourceEditor({
         </div>
       )}
 
+      {/* Screener Options - only for screener mode */}
+      {config.source_type === 'screener' && (
+        <div
+          className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Scan className="w-4 h-4 text-purple-500" />
+              <span className="text-sm font-medium text-nofx-text">
+                {t('screener')} {t('dataSourceConfig')}
+              </span>
+              <NofxOSBadge />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.use_screener}
+                onChange={(e) =>
+                  !disabled && onChange({ ...config, use_screener: e.target.checked })
+                }
+                disabled={disabled}
+                className="w-5 h-5 rounded accent-purple-500"
+              />
+              <span className="text-nofx-text">{t('useScreener')}</span>
+            </label>
+
+            {config.use_screener && (
+              <>
+                <div className="flex items-center gap-3 pl-8">
+                  <span className="text-sm text-nofx-text-muted">
+                    {t('screenerLimit')}:
+                  </span>
+                  <select
+                    value={config.screener_limit || 10}
+                    onChange={(e) =>
+                      !disabled &&
+                      onChange({ ...config, screener_limit: parseInt(e.target.value) || 10 })
+                    }
+                    disabled={disabled}
+                    className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                  >
+                    {[5, 10, 15, 20, 30, 50].map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3 pl-8">
+                  <span className="text-sm text-nofx-text-muted">
+                    {t('screenerDuration')}:
+                  </span>
+                  <select
+                    value={config.screener_duration || "1h"}
+                    onChange={(e) =>
+                      !disabled &&
+                      onChange({ ...config, screener_duration: e.target.value })
+                    }
+                    disabled={disabled}
+                    className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                  >
+                    {["5m", "15m", "30m", "1h", "4h"].map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3 pl-8">
+                  <span className="text-sm text-nofx-text-muted">
+                    {t('screenerSortBy')}:
+                  </span>
+                  <select
+                    value={config.screener_sort_by || "oi"}
+                    onChange={(e) =>
+                      !disabled &&
+                      onChange({ ...config, screener_sort_by: e.target.value })
+                    }
+                    disabled={disabled}
+                    className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                  >
+                    <option value="oi">{t('oi')}</option>
+                    <option value="price">{t('price')}</option>
+                    <option value="vol">{t('vol')}</option>
+                  </select>
+                </div>
+
+                <p className="text-xs pl-8 text-nofx-text-muted">
+                  {t('nofxosNote')}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Mixed Mode - Unified Card Selector */}
       {config.source_type === 'mixed' && (
         <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
@@ -501,7 +615,6 @@ export function CoinSourceEditor({
             </span>
           </div>
 
-          {/* 4 Source Cards in 2x2 Grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {/* AI500 Card */}
             <div
@@ -636,6 +749,87 @@ export function CoinSourceEditor({
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>
+                </div>
+              )}
+            </div>
+
+            {/* Screener Card */}
+            <div
+              className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                config.use_screener
+                  ? 'bg-purple-500/10 border-purple-500/50'
+                  : 'bg-nofx-bg border-nofx-border hover:border-purple-500/30'
+              }`}
+              onClick={() => !disabled && onChange({ ...config, use_screener: !config.use_screener })}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={config.use_screener}
+                  onChange={(e) => !disabled && onChange({ ...config, use_screener: e.target.checked })}
+                  disabled={disabled}
+                  className="w-4 h-4 rounded accent-purple-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <Scan className="w-4 h-4 text-purple-500" />
+                <span className="text-sm font-medium text-nofx-text">
+                  {t('screener')}
+                </span>
+                <NofxOSBadge />
+              </div>
+              {config.use_screener && (
+                <div className="pl-6 space-y-1 mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-nofx-text-muted">Lim:</span>
+                    <select
+                      value={config.screener_limit || 10}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        !disabled && onChange({ ...config, screener_limit: parseInt(e.target.value) || 10 })
+                      }}
+                      disabled={disabled}
+                      className="px-1 py-0.5 rounded text-[10px] bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {[5, 10, 15, 20].map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-nofx-text-muted">Dur:</span>
+                    <select
+                      value={config.screener_duration || "1h"}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        !disabled && onChange({ ...config, screener_duration: e.target.value })
+                      }}
+                      disabled={disabled}
+                      className="px-1 py-0.5 rounded text-[10px] bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {["15m", "1h", "4h"].map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-nofx-text-muted">Sort:</span>
+                    <select
+                      value={config.screener_sort_by || "oi"}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        !disabled && onChange({ ...config, screener_sort_by: e.target.value })
+                      }}
+                      disabled={disabled}
+                      className="px-1 py-0.5 rounded text-[10px] bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="oi">{t('oi')}</option>
+                      <option value="price">{t('price')}</option>
+                      <option value="vol">{t('vol')}</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </div>

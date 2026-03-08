@@ -40,6 +40,7 @@ import { AlphaFactorEditor } from '../components/strategy/AlphaFactorEditor'
 import { MultiAgentEditor } from '../components/strategy/MultiAgentEditor'
 import { PromptSectionsEditor } from '../components/strategy/PromptSectionsEditor'
 import { PublishSettingsEditor } from '../components/strategy/PublishSettingsEditor'
+import { StrategyOptimizer } from '../components/strategy/StrategyOptimizer'
 import { GridConfigEditor, defaultGridConfig } from '../components/strategy/GridConfigEditor'
 import { DeepVoidBackground } from '../components/DeepVoidBackground'
 
@@ -75,7 +76,7 @@ export function StrategyStudioPage() {
   })
 
   // Right panel states
-  const [activeRightTab, setActiveRightTab] = useState<'prompt' | 'test'>('prompt')
+  const [activeRightTab, setActiveRightTab] = useState<'prompt' | 'test' | 'optimize'>('prompt')
   const [promptPreview, setPromptPreview] = useState<{
     system_prompt: string
     user_prompt?: string
@@ -487,6 +488,45 @@ export function StrategyStudioPage() {
     }
   }
 
+  // Apply optimized parameters
+  const applyParamsToConfig = (params: Record<string, number>) => {
+    if (!editingConfig) return
+    
+    // Create a deep copy to avoid direct mutation
+    const newConfig = JSON.parse(JSON.stringify(editingConfig))
+    
+    // Apply each parameter
+    Object.entries(params).forEach(([path, value]) => {
+      const parts = path.split('.')
+      let current: any = newConfig
+      
+      // Traverse to the parent object
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (current[parts[i]] === undefined) {
+          console.warn(`Path not found: ${parts.slice(0, i+1).join('.')}`)
+          return
+        }
+        current = current[parts[i]]
+      }
+      
+      // Set value on the leaf property
+      const lastPart = parts[parts.length - 1]
+      // Handle array indices (e.g. "indicators.rsi_periods.0")
+      if (!isNaN(parseInt(lastPart))) {
+        // Array index
+        current[parseInt(lastPart)] = value
+      } else {
+        // Object property
+        current[lastPart] = value
+      }
+    })
+    
+    setEditingConfig(newConfig)
+    setHasChanges(true)
+    notify.success(language === 'zh' ? '参数已应用' : 'Parameters applied')
+    setActiveRightTab('prompt') // Switch back to preview
+  }
+
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
       strategyStudio: { zh: '策略工作室', en: 'Strategy Studio' },
@@ -531,6 +571,7 @@ export function StrategyStudioPage() {
       noModel: { zh: '请先配置 AI 模型', en: 'Please configure AI model first' },
       testNote: { zh: '使用真实 AI 模型测试，不执行交易', en: 'Test with real AI, no trading' },
       publishSettings: { zh: '发布设置', en: 'Publish' },
+      optimization: { zh: '参数优化', en: 'Optimization' },
     }
     return translations[key]?.[language] || key
   }
@@ -1007,6 +1048,14 @@ export function StrategyStudioPage() {
               <Play className="w-4 h-4" />
               {t('aiTestRun')}
             </button>
+            <button
+              onClick={() => setActiveRightTab('optimize')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${activeRightTab === 'optimize' ? 'border-b-2 border-nofx-gold text-nofx-gold' : 'opacity-60 hover:opacity-100 text-nofx-text-muted'
+                }`}
+            >
+              <Settings className="w-4 h-4" />
+              {t('optimization')}
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -1079,7 +1128,7 @@ export function StrategyStudioPage() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : activeRightTab === 'test' ? (
               /* AI Test Tab */
               <div className="p-3 space-y-3">
                 {/* Controls */}
@@ -1226,6 +1275,18 @@ export function StrategyStudioPage() {
                     <Play className="w-10 h-10 mb-2 opacity-30" />
                     <p className="text-sm">{language === 'zh' ? '点击运行 AI 测试' : 'Click to run AI test'}</p>
                   </div>
+                )}
+              </div>
+            ) : (
+              /* Optimization Tab */
+              <div className="h-full overflow-hidden">
+                {selectedStrategy && editingConfig && (
+                  <StrategyOptimizer
+                    strategyId={selectedStrategy.id}
+                    config={editingConfig}
+                    onApplyParams={applyParamsToConfig}
+                    language={language as 'zh' | 'en'}
+                  />
                 )}
               </div>
             )}

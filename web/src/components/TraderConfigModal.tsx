@@ -76,16 +76,18 @@ export function TraderConfigModal({
     const fetchStrategies = async () => {
       try {
         const result = await httpClient.get<{ strategies: Strategy[] }>('/api/strategies')
-        if (result.success && result.data?.strategies) {
-          const strategyList = result.data.strategies
-          setStrategies(strategyList)
+        // 处理后端直接返回数组或嵌套在 data 中的情况
+        const strategiesData = Array.isArray(result) ? result : result.strategies || (result.data as any)?.strategies || []
+        
+        if (Array.isArray(strategiesData)) {
+          setStrategies(strategiesData)
           // 如果没有选择策略，默认选中激活的策略
           if (!formData.strategy_id && !isEditMode) {
-            const activeStrategy = strategyList.find(s => s.is_active)
+            const activeStrategy = strategiesData.find(s => s.is_active)
             if (activeStrategy) {
               setFormData(prev => ({ ...prev, strategy_id: activeStrategy.id }))
-            } else if (strategyList.length > 0) {
-              setFormData(prev => ({ ...prev, strategy_id: strategyList[0].id }))
+            } else if (strategiesData.length > 0) {
+              setFormData(prev => ({ ...prev, strategy_id: strategiesData[0].id }))
             }
           }
         }

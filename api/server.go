@@ -16,6 +16,8 @@ import (
 	"nofx/manager"
 	"nofx/market"
 	"nofx/notification"
+	"nofx/mcp"
+	"nofx/optimizer"
 	"nofx/provider/alpaca"
 	"nofx/provider/coinank/coinank_api"
 	"nofx/provider/coinank/coinank_enum"
@@ -67,10 +69,13 @@ type Server struct {
 	riskHandler  *RiskHandler
 	alphaHandler *AlphaHandler
 	agentHandler *AgentHandler
+
+	optimizerManager *optimizer.Manager
+	mcpClient        mcp.AIClient
 }
 
 // NewServer Creates API server
-func NewServer(traderManager *manager.TraderManager, taskManager *manager.TaskManager, st *store.Store, cryptoService *crypto.CryptoService, backtestManager *backtest.Manager, port int) *Server {
+func NewServer(traderManager *manager.TraderManager, taskManager *manager.TaskManager, st *store.Store, cryptoService *crypto.CryptoService, backtestManager *backtest.Manager, mcpClient mcp.AIClient, port int) *Server {
 	// Set to Release mode (reduce log output)
 	gin.SetMode(gin.ReleaseMode)
 
@@ -95,19 +100,24 @@ func NewServer(traderManager *manager.TraderManager, taskManager *manager.TaskMa
 	alphaHandler := NewAlphaHandler()
 	agentHandler := NewAgentHandler()
 
+	// Initialize Optimizer Manager
+	optimizerManager := optimizer.NewManager(st.Strategy(), mcpClient)
+
 	s := &Server{
-		router:          router,
-		traderManager:   traderManager,
-		taskManager:     taskManager,
-		store:           st,
-		cryptoHandler:   cryptoHandler,
-		backtestManager: backtestManager,
-		debateHandler:   debateHandler,
-		auditChan:       make(chan *AuditLogEntry, 1000), // Buffered channel for audit logs
-		port:            port,
-		riskHandler:     riskHandler,
-		alphaHandler:    alphaHandler,
-		agentHandler:    agentHandler,
+		router:           router,
+		traderManager:    traderManager,
+		taskManager:      taskManager,
+		store:            st,
+		cryptoHandler:    cryptoHandler,
+		backtestManager:  backtestManager,
+		debateHandler:    debateHandler,
+		auditChan:        make(chan *AuditLogEntry, 1000), // Buffered channel for audit logs
+		port:             port,
+		riskHandler:      riskHandler,
+		alphaHandler:     alphaHandler,
+		agentHandler:     agentHandler,
+		optimizerManager: optimizerManager,
+		mcpClient:        mcpClient,
 	}
 
 	// Start audit log worker
@@ -245,6 +255,14 @@ func (s *Server) setupRoutes() {
 			protected.DELETE("/strategies/:id", s.handleDeleteStrategy)
 			protected.POST("/strategies/:id/activate", s.handleActivateStrategy)
 			protected.POST("/strategies/:id/duplicate", s.handleDuplicateStrategy)
+
+			// Strategy Optimization
+			protected.POST("/strategies/optimize", s.handleRunOptimization)
+			// V1 Optimization endpoint (alias)
+			protected.POST("/v1/optimize", s.handleRunOptimization)
+			protected.GET("/strategies/optimize/:id/status", s.handleGetOptimizationStatus)
+			protected.POST("/strategies/optimize/:id/cancel", s.handleCancelOptimization)
+			protected.POST("/strategies/optimize/:id/apply", s.handleApplyOptimizationResult)
 
 			// Debate Arena
 			protected.GET("/debates", s.debateHandler.HandleListDebates)

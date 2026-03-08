@@ -143,7 +143,7 @@ func main() {
 	}
 
 	// Start API server
-	server := api.NewServer(traderManager, taskManager, st, cryptoService, backtestManager, cfg.APIServerPort)
+	server := api.NewServer(traderManager, taskManager, st, cryptoService, backtestManager, mcpClient, cfg.APIServerPort)
 	go func() {
 		if err := server.Start(); err != nil {
 			logger.Fatalf("❌ Failed to start API server: %v", err)

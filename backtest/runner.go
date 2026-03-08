@@ -1481,6 +1481,38 @@ func snapshotsToMap(snaps []PositionSnapshot) map[string]PositionSnapshot {
 	return positions
 }
 
+// GetStats returns the current backtest statistics
+func (r *Runner) GetStats() *RunSummary {
+	state := r.snapshotState()
+	progress := progressPercent(state, r.cfg)
+
+	trades := r.account.ClosedTrades()
+	winRate := 0.0
+	if trades > 0 {
+		winRate = float64(r.account.WinningTrades()) / float64(trades) * 100
+	}
+
+	return &RunSummary{
+		SymbolCount:     len(r.cfg.Symbols),
+		DecisionTF:      r.cfg.DecisionTimeframe,
+		ProcessedBars:   state.BarIndex,
+		ProgressPct:     progress,
+		EquityLast:      state.Equity,
+		MaxDrawdownPct:  state.MaxDrawdownPct,
+		Trades:          trades,
+		WinRate:         winRate,
+		Liquidated:      state.Liquidated,
+		LiquidationNote: state.LiquidationNote,
+	}
+}
+
+// GetEquityPoints returns the equity history points
+func (r *Runner) GetEquityPoints() ([]EquityPoint, error) {
+	// Read equity points from disk or cache if implemented
+	// For now, we'll try to read from the equity file
+	return LoadEquityPoints(r.cfg.RunID)
+}
+
 func sortDecisionsByPriority(decisions []kernel.Decision) []kernel.Decision {
 	if len(decisions) <= 1 {
 		return decisions

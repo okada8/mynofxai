@@ -187,6 +187,14 @@ type CoinSourceConfig struct {
 	UseOILow bool `json:"use_oi_low"`
 	// OI Low maximum count
 	OILowLimit int `json:"oi_low_limit,omitempty"`
+	// whether to use Visual Screener (CoinAnk)
+	UseScreener bool `json:"use_screener"`
+	// Visual Screener maximum count
+	ScreenerLimit int `json:"screener_limit,omitempty"`
+	// Visual Screener duration (e.g., "1h", "4h")
+	ScreenerDuration string `json:"screener_duration,omitempty"`
+	// Visual Screener sort by ("oi", "price", "vol")
+	ScreenerSortBy string `json:"screener_sort_by,omitempty"`
 	// whether to use Hyperliquid All coins (all available perp pairs)
 	UseHyperAll bool `json:"use_hyper_all"`
 	// whether to use Hyperliquid Main coins (top N by 24h volume)
@@ -632,6 +640,11 @@ func GetDefaultStrategyConfig(lang string) StrategyConfig {
 			OITopLimit: 10,
 			UseOILow:   false,
 			OILowLimit: 10,
+			// Screener defaults
+			UseScreener:      false,
+			ScreenerLimit:    10,
+			ScreenerDuration: "1h",
+			ScreenerSortBy:   "oi",
 		},
 		Indicators: IndicatorConfig{
 			Klines: KlineConfig{

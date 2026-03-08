@@ -364,7 +364,17 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
         setSymbolStats(data.symbol_stats || [])
         setDirectionStats(data.direction_stats || [])
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load history')
+        const message = err instanceof Error ? err.message : 'Failed to load history'
+        // If trader not found or no history, show empty state instead of error
+        if (message.includes('Trader not found') || message.includes('"error":"Trader not found"')) {
+          setPositions([])
+          setStats(null)
+          setSymbolStats([])
+          setDirectionStats([])
+          setError(null)
+        } else {
+          setError(message)
+        }
       } finally {
         setLoading(false)
       }

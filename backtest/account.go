@@ -28,6 +28,8 @@ type BacktestAccount struct {
 	slippageRate   float64
 	positions      map[string]*position
 	realizedPnL    float64
+	closedTrades   int
+	winningTrades  int
 }
 
 func NewBacktestAccount(initialBalance, feeBps, slippageBps float64) *BacktestAccount {
@@ -141,6 +143,10 @@ func (acc *BacktestAccount) Close(symbol, side string, quantity float64, price f
 	acc.cash += marginPortion + realized - closingFee
 	// But for realized P&L tracking, we include both fees
 	acc.realizedPnL += realized - totalFee
+	acc.closedTrades++
+	if realized-totalFee > 0 {
+		acc.winningTrades++
+	}
 
 	pos.Quantity -= quantity
 	pos.Notional -= entryNotionalPortion // FIX: Use entry notional portion, not close notional
@@ -264,4 +270,12 @@ func (acc *BacktestAccount) RestoreFromSnapshots(cash float64, realized float64,
 		key := positionKey(pos.Symbol, pos.Side)
 		acc.positions[key] = pos
 	}
+}
+
+func (acc *BacktestAccount) ClosedTrades() int {
+	return acc.closedTrades
+}
+
+func (acc *BacktestAccount) WinningTrades() int {
+	return acc.winningTrades
 }

@@ -179,7 +179,7 @@ type CleanupConfig struct {
 	CheckInterval     time.Duration `json:"check_interval"`      // Check interval
 }
 
-var config = Config{
+var defaultConfig = Config{
 	AlertThresholds: AlertThresholds{
 		VolumeSpike:      3.0,
 		PriceChange15Min: 0.05,

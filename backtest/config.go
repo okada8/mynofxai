@@ -13,6 +13,7 @@ import (
 type AIConfig struct {
 	Provider    string  `json:"provider"`
 	Model       string  `json:"model"`
+	ModelID     string  `json:"model_id,omitempty"` // Added for model ID reference
 	APIKey      string  `json:"key"`
 	SecretKey   string  `json:"secret_key,omitempty"`
 	BaseURL     string  `json:"base_url,omitempty"`
@@ -144,6 +145,9 @@ func (cfg *BacktestConfig) Validate() error {
 	}
 	if cfg.AICfg.Temperature == 0 {
 		cfg.AICfg.Temperature = 0.4
+	}
+	if cfg.AICfg.ModelID == "" {
+		cfg.AICfg.ModelID = "inherit"
 	}
 
 	if cfg.Leverage.BTCETHLeverage <= 0 {

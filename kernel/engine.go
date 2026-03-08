@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"nofx/config"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/mcp"
+	"nofx/provider/coinank"
+	"nofx/provider/coinank/coinank_enum"
 	"nofx/provider/hyperliquid"
 	"nofx/provider/nofxos"
 	"nofx/security"
@@ -200,22 +204,28 @@ type OIDeltaData struct {
 
 // StrategyEngine strategy execution engine
 type StrategyEngine struct {
-	config       *store.StrategyConfig
-	nofxosClient *nofxos.Client
+	config        *store.StrategyConfig
+	nofxosClient  *nofxos.Client
+	coinankClient *coinank.CoinankClient
 }
 
 // NewStrategyEngine creates strategy execution engine
-func NewStrategyEngine(config *store.StrategyConfig) *StrategyEngine {
+func NewStrategyEngine(strategyConfig *store.StrategyConfig) *StrategyEngine {
 	// Create NofxOS client with API key from config
-	apiKey := config.Indicators.NofxOSAPIKey
+	apiKey := strategyConfig.Indicators.NofxOSAPIKey
 	if apiKey == "" {
 		apiKey = nofxos.DefaultAuthKey
 	}
 	client := nofxos.NewClient(nofxos.DefaultBaseURL, apiKey)
 
+	// Create CoinAnk client
+	coinankAPIKey := config.Get().CoinAnkAPIKey
+	coinankClient := coinank.NewCoinankClient(coinank.MainApiUrl, coinankAPIKey)
+
 	return &StrategyEngine{
-		config:       config,
-		nofxosClient: client,
+		config:        strategyConfig,
+		nofxosClient:  client,
+		coinankClient: coinankClient,
 	}
 }
 
@@ -530,6 +540,25 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 		}
 		return e.filterExcludedCoins(coins), nil
 
+	case "screener":
+		// Visual Screener (CoinAnk)
+		if !coinSource.UseScreener {
+			logger.Infof("⚠️  source_type is 'screener' but use_screener is false, falling back to static coins")
+			for _, symbol := range coinSource.StaticCoins {
+				symbol = market.Normalize(symbol)
+				candidates = append(candidates, CandidateCoin{
+					Symbol:  symbol,
+					Sources: []string{"static"},
+				})
+			}
+			return e.filterExcludedCoins(candidates), nil
+		}
+		coins, err := e.getScreenerCoins(coinSource.ScreenerLimit)
+		if err != nil {
+			return nil, err
+		}
+		return e.filterExcludedCoins(coins), nil
+
 	case "mixed":
 		if coinSource.UseAI500 {
 			poolCoins, err := e.getAI500Coins(coinSource.AI500Limit)
@@ -538,6 +567,17 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 			} else {
 				for _, coin := range poolCoins {
 					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], "ai500")
+				}
+			}
+		}
+
+		if coinSource.UseScreener {
+			screenerCoins, err := e.getScreenerCoins(coinSource.ScreenerLimit)
+			if err != nil {
+				logger.Infof("⚠️  Failed to get Screener coins: %v", err)
+			} else {
+				for _, coin := range screenerCoins {
+					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], "screener")
 				}
 			}
 		}
@@ -745,6 +785,75 @@ func (e *StrategyEngine) getHyperMainCoins(limit int) ([]CandidateCoin, error) {
 		})
 	}
 	logger.Infof("✅ Loaded %d Hyperliquid main coins (hyper_main) by 24h volume", len(candidates))
+	return candidates, nil
+}
+
+// getScreenerCoins returns coins from CoinAnk Visual Screener
+func (e *StrategyEngine) getScreenerCoins(limit int) ([]CandidateCoin, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+
+	// 1. Use configured duration, default to 1h
+	duration := e.config.CoinSource.ScreenerDuration
+	if duration == "" {
+		duration = "1h"
+	}
+	interval := coinank_enum.Interval(duration)
+
+	resp, err := e.coinankClient.VisualScreener(context.Background(), interval)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get screener coins: %w", err)
+	}
+
+	// 2. Filter and sort based on configuration
+	type coinRank struct {
+		symbol string
+		val    float64
+	}
+	var allCoins []coinRank
+
+	sortBy := e.config.CoinSource.ScreenerSortBy
+	if sortBy == "" {
+		sortBy = "oi"
+	}
+
+	for _, item := range resp {
+		// Normalize symbol
+		symbol := market.Normalize(item.BaseCoin + "USDT") // CoinAnk returns base coin (e.g. BTC)
+		var val float64
+		switch sortBy {
+		case "price":
+			val = math.Abs(item.PriceChg)
+		case "vol":
+			val = math.Abs(item.VoChg)
+		case "oi":
+			fallthrough
+		default:
+			val = math.Abs(item.OiChg)
+		}
+
+		allCoins = append(allCoins, coinRank{symbol: symbol, val: val})
+	}
+
+	// 3. Sort by absolute value descending (bubble sort for simplicity)
+	for i := 0; i < len(allCoins)-1; i++ {
+		for j := 0; j < len(allCoins)-i-1; j++ {
+			if allCoins[j].val < allCoins[j+1].val {
+				allCoins[j], allCoins[j+1] = allCoins[j+1], allCoins[j]
+			}
+		}
+	}
+
+	var candidates []CandidateCoin
+	for i := 0; i < len(allCoins) && i < limit; i++ {
+		candidates = append(candidates, CandidateCoin{
+			Symbol:  allCoins[i].symbol,
+			Sources: []string{"screener"},
+		})
+	}
+
+	logger.Infof("✅ Loaded %d Screener coins (interval: %s, sorted by: %s)", len(candidates), duration, sortBy)
 	return candidates, nil
 }
 
@@ -1474,6 +1583,7 @@ func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 		hasAI500 := false
 		hasOITop := false
 		hasOILow := false
+		hasScreener := false
 		hasHyperAll := false
 		hasHyperMain := false
 		for _, s := range sources {
@@ -1484,6 +1594,8 @@ func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 				hasOITop = true
 			case "oi_low":
 				hasOILow = true
+			case "screener":
+				hasScreener = true
 			case "hyper_all":
 				hasHyperAll = true
 			case "hyper_main":
@@ -1498,6 +1610,9 @@ func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 		}
 		if hasOITop && hasOILow {
 			return " (OI_Top+OI_Low)"
+		}
+		if hasScreener {
+			return " (Screener)"
 		}
 		if hasHyperMain && hasAI500 {
 			return " (HyperMain+AI500)"
@@ -1514,6 +1629,8 @@ func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 			return " (OI_Top 持仓增加)"
 		case "oi_low":
 			return " (OI_Low 持仓减少)"
+		case "screener":
+			return " (Screener)"
 		case "static":
 			return " (Manual selection)"
 		case "hyper_all":
