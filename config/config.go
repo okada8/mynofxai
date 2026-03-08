@@ -46,6 +46,7 @@ type Config struct {
 	AlpacaAPIKey     string // Alpaca API key for US stocks
 	AlpacaSecretKey  string // Alpaca secret key
 	TwelveDataKey    string // TwelveData API key for forex & metals
+	CoinAnkAPIKey    string // CoinAnk API key for liquidation data
 
 	// AI Configuration
 	DeepSeekAPIKey string // DeepSeek API Key
@@ -115,6 +116,7 @@ func Init() {
 	cfg.AlpacaAPIKey = os.Getenv("ALPACA_API_KEY")
 	cfg.AlpacaSecretKey = os.Getenv("ALPACA_SECRET_KEY")
 	cfg.TwelveDataKey = os.Getenv("TWELVEDATA_API_KEY")
+	cfg.CoinAnkAPIKey = os.Getenv("COINANK_API_KEY")
 
 	// AI Configuration
 	cfg.DeepSeekAPIKey = os.Getenv("DEEPSEEK_API_KEY")

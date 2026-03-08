@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const MainApiUrl = "https://api.coinank.com"
+
 // CoinankClient coinank openapi url and apikey
 type CoinankClient struct {
 	Url    string

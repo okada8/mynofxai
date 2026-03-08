@@ -29,12 +29,15 @@ import {
   Download,
   Upload,
   Globe,
+  Users,
 } from 'lucide-react'
 import type { Strategy, StrategyConfig, AIModel } from '../types'
 import { confirmToast, notify } from '../lib/notify'
 import { CoinSourceEditor } from '../components/strategy/CoinSourceEditor'
 import { IndicatorEditor } from '../components/strategy/IndicatorEditor'
 import { RiskControlEditor } from '../components/strategy/RiskControlEditor'
+import { AlphaFactorEditor } from '../components/strategy/AlphaFactorEditor'
+import { MultiAgentEditor } from '../components/strategy/MultiAgentEditor'
 import { PromptSectionsEditor } from '../components/strategy/PromptSectionsEditor'
 import { PublishSettingsEditor } from '../components/strategy/PublishSettingsEditor'
 import { GridConfigEditor, defaultGridConfig } from '../components/strategy/GridConfigEditor'
@@ -63,6 +66,8 @@ export function StrategyStudioPage() {
     gridConfig: true,
     coinSource: true,
     indicators: false,
+    alphaFactors: false,
+    multiAgent: false,
     riskControl: false,
     promptSections: false,
     customPrompt: false,
@@ -496,6 +501,8 @@ export function StrategyStudioPage() {
       gridConfig: { zh: '网格配置', en: 'Grid Configuration' },
       coinSource: { zh: '币种来源', en: 'Coin Source' },
       indicators: { zh: '技术指标', en: 'Indicators' },
+      alphaFactors: { zh: 'Alpha 因子', en: 'Alpha Factors' },
+      multiAgent: { zh: '多代理系统', en: 'Multi-Agent' },
       riskControl: { zh: '风控参数', en: 'Risk Control' },
       promptSections: { zh: 'Prompt 编辑', en: 'Prompt Editor' },
       customPrompt: { zh: '附加提示', en: 'Extra Prompt' },
@@ -593,6 +600,37 @@ export function StrategyStudioPage() {
       ),
     },
     {
+      key: 'alphaFactors' as const,
+      icon: Activity,
+      color: '#a855f7',
+      title: t('alphaFactors'),
+      forStrategyType: 'ai_trading' as const,
+      content: editingConfig && (
+        <AlphaFactorEditor
+          config={editingConfig.alpha_factors}
+          onChange={(alphaFactors) => updateConfig('alpha_factors', alphaFactors)}
+          disabled={selectedStrategy?.is_default}
+          language={language}
+        />
+      ),
+    },
+    {
+      key: 'multiAgent' as const,
+      icon: Users,
+      color: '#60a5fa',
+      title: t('multiAgent'),
+      forStrategyType: 'ai_trading' as const,
+      content: editingConfig && (
+        <MultiAgentEditor
+          config={editingConfig.multi_agent}
+          aiModels={aiModels}
+          onChange={(multiAgent) => updateConfig('multi_agent', multiAgent)}
+          disabled={selectedStrategy?.is_default}
+          language={language}
+        />
+      ),
+    },
+    {
       key: 'riskControl' as const,
       icon: Shield,
       color: '#F6465D',
@@ -601,7 +639,9 @@ export function StrategyStudioPage() {
       content: editingConfig && (
         <RiskControlEditor
           config={editingConfig.risk_control}
+          enhancedConfig={editingConfig.risk_control_enhanced}
           onChange={(riskControl) => updateConfig('risk_control', riskControl)}
+          onEnhancedChange={(enhanced) => updateConfig('risk_control_enhanced', enhanced)}
           disabled={selectedStrategy?.is_default}
           language={language}
         />

@@ -1,0 +1,12 @@
+Risk Engine Design
+Risk Philosophy
+Professional trading systems prioritize capital protection above returns.
+
+Risk Layers
+1. Trade Level - max risk per trade: 1% - stop loss - leverage limits 2. Strategy Level - strategy drawdown
+limit - auto disable 3. Portfolio Level - daily loss limit - exposure cap
+
+Example Logic
+if daily_loss > 5%: disable_all_trading()
+
+

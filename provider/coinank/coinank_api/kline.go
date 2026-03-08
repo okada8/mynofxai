@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-const MainApiUrl = "https://api.coinank.com"
-
 // Kline open free kline from coinank
 func Kline(ctx context.Context, symbol string, exchange coinank_enum.Exchange, ts int64, side coinank_enum.Side, size int,
 	interval coinank_enum.Interval) ([]coinank.KlineResult, error) {
@@ -57,7 +55,7 @@ func get(ctx context.Context, path string, paramsMap map[string]string) (string,
 	for key, value := range paramsMap {
 		data.Add(key, value)
 	}
-	fullURL := fmt.Sprintf("%s%s?%s", MainApiUrl, path, data.Encode())
+	fullURL := fmt.Sprintf("%s%s?%s", coinank.MainApiUrl, path, data.Encode())
 	request, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {
 		return "", err

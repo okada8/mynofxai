@@ -1,0 +1,14 @@
+AI Trading Architecture Guide
+Overview
+Institutional grade AI trading systems separate intelligence, strategy, risk, and execution layers to ensure
+stability and reproducibility.
+
+Architecture
+Data Layer ↓ Feature Engineering ↓ AI Market Intelligence (regime detection / sentiment) ↓ Strategy
+Engine (trend / mean reversion / arbitrage) ↓ Risk Engine (position + portfolio control) ↓ Execution Engine
+(order router / exchange API) ↓ Monitoring Dashboard (PnL / metrics / alerts)
+
+Key Principles
+Modular architecture, deterministic risk control, reproducible backtests, and robust order execution.
+
+

@@ -1,0 +1,12 @@
+Crypto Quant Alpha Indicators
+Crypto Alpha Indicators
+Crypto markets offer unique alpha signals beyond price prediction.
+
+Indicators
+Funding Rate Deviation Open Interest Change Liquidation Clusters Orderbook Imbalance Exchange Inflow
+/ Outflow Whale Wallet Activity Spread Expansion Volume Spike Detection
+
+Example Feature
+momentum = close / close.shift(20) volatility = returns.std()
+
+

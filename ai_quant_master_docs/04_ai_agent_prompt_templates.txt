@@ -1,0 +1,14 @@
+AI Trading Agent Prompt Templates
+Agent Roles
+Separate AI agents can analyze different market dimensions.
+
+Agents
+Macro Agent: Detect macro trend and volatility regime Technical Agent: Analyze indicators and price
+structure Sentiment Agent: Analyze social media and news Risk Agent: Decide capital allocation
+
+Prompt Template
+You are a crypto trading analyst. Market Data: {market_features} Tasks: 1. Determine market regime 2.
+Evaluate sentiment 3. Recommend directional bias Output JSON: { "regime": "", "sentiment": "", "direction":
+"" }
+
+

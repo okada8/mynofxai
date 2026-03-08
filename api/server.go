@@ -62,6 +62,11 @@ type Server struct {
 	auditChan       chan *AuditLogEntry
 	httpServer      *http.Server
 	port            int
+	
+	// V2 Handlers
+	riskHandler  *RiskHandler
+	alphaHandler *AlphaHandler
+	agentHandler *AgentHandler
 }
 
 // NewServer Creates API server
@@ -85,6 +90,11 @@ func NewServer(traderManager *manager.TraderManager, taskManager *manager.TaskMa
 	debateHandler := NewDebateHandler(debateStore, st.Strategy(), st.AIModel())
 	debateHandler.SetTraderManager(traderManager)
 
+	// V2 Handlers
+	riskHandler := NewRiskHandler()
+	alphaHandler := NewAlphaHandler()
+	agentHandler := NewAgentHandler()
+
 	s := &Server{
 		router:          router,
 		traderManager:   traderManager,
@@ -95,6 +105,9 @@ func NewServer(traderManager *manager.TraderManager, taskManager *manager.TaskMa
 		debateHandler:   debateHandler,
 		auditChan:       make(chan *AuditLogEntry, 1000), // Buffered channel for audit logs
 		port:            port,
+		riskHandler:     riskHandler,
+		alphaHandler:    alphaHandler,
+		agentHandler:    agentHandler,
 	}
 
 	// Start audit log worker
@@ -262,6 +275,16 @@ func (s *Server) setupRoutes() {
 			// Backtest routes
 			backtest := protected.Group("/backtest")
 			s.registerBacktestRoutes(backtest)
+
+			// Risk Control routes
+			protected.POST("/risk/control", s.riskHandler.Control)
+			protected.GET("/risk/status", s.riskHandler.GetStatus)
+
+			// Alpha Factor routes
+			protected.GET("/alpha/factors", s.alphaHandler.GetFactors)
+
+			// Multi-Agent routes
+			protected.POST("/agent/analyze", s.agentHandler.Analyze)
 		}
 	}
 }

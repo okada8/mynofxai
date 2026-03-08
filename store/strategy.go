@@ -22,8 +22,8 @@ type Strategy struct {
 	Description   string    `gorm:"default:''" json:"description"`
 	IsActive      bool      `gorm:"column:is_active;default:false;index" json:"is_active"`
 	IsDefault     bool      `gorm:"column:is_default;default:false" json:"is_default"`
-	IsPublic      bool      `gorm:"column:is_public;default:false;index" json:"is_public"`       // whether visible in strategy market
-	ConfigVisible bool      `gorm:"column:config_visible;default:true" json:"config_visible"`    // whether config details are visible
+	IsPublic      bool      `gorm:"column:is_public;default:false;index" json:"is_public"`    // whether visible in strategy market
+	ConfigVisible bool      `gorm:"column:config_visible;default:true" json:"config_visible"` // whether config details are visible
 	Config        string    `gorm:"not null;default:'{}'" json:"config"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
@@ -43,10 +43,16 @@ type StrategyConfig struct {
 	CoinSource CoinSourceConfig `json:"coin_source"`
 	// quantitative data configuration
 	Indicators IndicatorConfig `json:"indicators"`
+	// Alpha factors configuration (new in nofx 2.0)
+	AlphaFactors *AlphaFactorConfig `json:"alpha_factors,omitempty"`
+
 	// custom prompt (appended at the end)
 	CustomPrompt string `json:"custom_prompt,omitempty"`
 	// risk control configuration
 	RiskControl RiskControlConfig `json:"risk_control"`
+	// Enhanced risk control (new in nofx 2.0)
+	RiskControlEnhanced *RiskControlEnhanced `json:"risk_control_enhanced,omitempty"`
+
 	// editable sections of System Prompt
 	PromptSections PromptSectionsConfig `json:"prompt_sections,omitempty"`
 	// volatility configuration
@@ -60,6 +66,39 @@ type StrategyConfig struct {
 
 	// Grid trading configuration (only used when StrategyType == "grid_trading")
 	GridConfig *GridStrategyConfig `json:"grid_config,omitempty"`
+
+	// Multi-agent configuration (new in nofx 2.0)
+	MultiAgent *MultiAgentConfig `json:"multi_agent,omitempty"`
+}
+
+// MultiAgentConfig multi-agent configuration
+type MultiAgentConfig struct {
+	Enabled         bool                   `json:"enabled"`
+	Agents          map[string]AgentConfig `json:"agents"`
+	VotingMechanism string                 `json:"voting_mechanism"`  // "majority", "weighted", "veto"
+	MinAgreementPct float64                `json:"min_agreement_pct"` // minimum agreement percentage
+
+	// Genetic evolution
+	EnableGeneticEvolution bool            `json:"enable_genetic_evolution"`
+	EvolutionConfig        EvolutionConfig `json:"evolution_config"`
+}
+
+// AgentConfig agent configuration
+type AgentConfig struct {
+	Enabled          bool     `json:"enabled"`
+	Weight           float64  `json:"weight"`            // voting weight
+	PromptTemplate   string   `json:"prompt_template"`   // agent-specific prompt
+	ModelOverride    string   `json:"model_override"`    // optional model override
+	DataRequirements []string `json:"data_requirements"` // required data types
+}
+
+// EvolutionConfig evolution configuration
+type EvolutionConfig struct {
+	PopulationSize int     `json:"population_size"`
+	MaxGenerations int     `json:"max_generations"`
+	MutationRate   float64 `json:"mutation_rate"`
+	CrossoverRate  float64 `json:"crossover_rate"`
+	EliteCount     int     `json:"elite_count"` // number of elites to keep per generation
 }
 
 // TrailingStopConfig trailing stop configuration
@@ -174,19 +213,19 @@ type IndicatorConfig struct {
 	EnableMACD        bool `json:"enable_macd"`
 	EnableRSI         bool `json:"enable_rsi"`
 	EnableATR         bool `json:"enable_atr"`
-	EnableBOLL        bool `json:"enable_boll"`         // Bollinger Bands
+	EnableBOLL        bool `json:"enable_boll"` // Bollinger Bands
 	EnableVolume      bool `json:"enable_volume"`
 	EnableOI          bool `json:"enable_oi"`           // open interest
 	EnableFundingRate bool `json:"enable_funding_rate"` // funding rate
 	// Advanced indicators
-	EnableADX            bool `json:"enable_adx"`
-	EnableVWAP           bool `json:"enable_vwap"`
-	EnableOBV            bool `json:"enable_obv"`
-	EnableCMF            bool `json:"enable_cmf"`
-	EnableLiquidation    bool `json:"enable_liquidation"`
-	EnableCVD            bool `json:"enable_cvd"`
-	EnableNetPosition    bool `json:"enable_net_position"`
-	EnableSignalLabels   bool `json:"enable_signal_labels"`
+	EnableADX             bool `json:"enable_adx"`
+	EnableVWAP            bool `json:"enable_vwap"`
+	EnableOBV             bool `json:"enable_obv"`
+	EnableCMF             bool `json:"enable_cmf"`
+	EnableLiquidation     bool `json:"enable_liquidation"`
+	EnableCVD             bool `json:"enable_cvd"`
+	EnableNetPosition     bool `json:"enable_net_position"`
+	EnableSignalLabels    bool `json:"enable_signal_labels"`
 	EnableIndicatorSeries bool `json:"enable_indicator_series"`
 
 	// EMA period configuration
@@ -206,18 +245,18 @@ type IndicatorConfig struct {
 	DonchianPeriods   []int `json:"donchian_periods,omitempty"`
 
 	// Score System
-	EnableHeatScore                 bool `json:"enable_heat_score"`
-	EnableVolatilityUtilScore       bool `json:"enable_volatility_util_score"`
-	EnableVolumeSpikeScore          bool `json:"enable_volume_spike_score"`
-	EnableFundingRateScore          bool `json:"enable_funding_rate_score"`
-	EnableOrderbookImbalanceScore   bool `json:"enable_orderbook_imbalance_score"`
-	EnableAdaptiveCompositeWeights  bool `json:"enable_adaptive_composite_weights"`
-	WeightHeat                      float64 `json:"weight_heat"`
-	WeightVolatilityUtil            float64 `json:"weight_volatility_util"`
-	WeightVolumeSpike               float64 `json:"weight_volume_spike"`
-	WeightFundingRate               float64 `json:"weight_funding_rate"`
-	WeightOrderbookImbalance        float64 `json:"weight_orderbook_imbalance"`
-	GroupedWeights                  *GroupedWeightsConfig `json:"grouped_weights,omitempty"`
+	EnableHeatScore                bool                  `json:"enable_heat_score"`
+	EnableVolatilityUtilScore      bool                  `json:"enable_volatility_util_score"`
+	EnableVolumeSpikeScore         bool                  `json:"enable_volume_spike_score"`
+	EnableFundingRateScore         bool                  `json:"enable_funding_rate_score"`
+	EnableOrderbookImbalanceScore  bool                  `json:"enable_orderbook_imbalance_score"`
+	EnableAdaptiveCompositeWeights bool                  `json:"enable_adaptive_composite_weights"`
+	WeightHeat                     float64               `json:"weight_heat"`
+	WeightVolatilityUtil           float64               `json:"weight_volatility_util"`
+	WeightVolumeSpike              float64               `json:"weight_volume_spike"`
+	WeightFundingRate              float64               `json:"weight_funding_rate"`
+	WeightOrderbookImbalance       float64               `json:"weight_orderbook_imbalance"`
+	GroupedWeights                 *GroupedWeightsConfig `json:"grouped_weights,omitempty"`
 
 	// ========== NofxOS Unified API Configuration ==========
 	// Unified API Key for all NofxOS data sources
@@ -266,6 +305,74 @@ type WeightsConfig struct {
 	WeightOrderbookImbalance float64 `json:"weight_orderbook_imbalance"`
 }
 
+// RiskControlEnhanced enhanced risk control configuration
+type RiskControlEnhanced struct {
+	// Emergency risk control fields
+	DailyLossLimitPct        float64 `json:"daily_loss_limit_pct"`
+	StrategyDrawdownLimitPct float64 `json:"strategy_drawdown_limit_pct"`
+	MaxRiskPerTradePct       float64 `json:"max_risk_per_trade_pct"`
+	AutoDisableOnLoss        bool    `json:"auto_disable_on_loss"`
+	DailyLossThresholdPct    float64 `json:"daily_loss_threshold_pct"`
+	RiskPerTradeMode         string  `json:"risk_per_trade_mode"` // "fixed" or "dynamic"
+
+	// Dynamic risk adjustment
+	DynamicRiskAdjustment DynamicRiskConfig `json:"dynamic_risk_adjustment"`
+}
+
+// DynamicRiskConfig dynamic risk configuration
+type DynamicRiskConfig struct {
+	Enabled              bool                      `json:"enabled"`
+	MarketRegimeMapping  map[string]RiskAdjustment `json:"market_regime_mapping"`
+	ConfidenceAdjustment ConfidenceRiskAdjustment  `json:"confidence_adjustment"`
+	VolatilityAdjustment VolatilityRiskAdjustment  `json:"volatility_adjustment"`
+}
+
+// RiskAdjustment risk adjustment parameters
+type RiskAdjustment struct {
+	RiskMultiplier  float64 `json:"risk_multiplier"`   // 0.5-2.0
+	PositionSizePct float64 `json:"position_size_pct"` // position size adjustment
+	MaxLeverage     int     `json:"max_leverage"`      // leverage adjustment
+}
+
+// ConfidenceRiskAdjustment confidence-based risk adjustment
+type ConfidenceRiskAdjustment struct {
+	HighConfidence   RiskAdjustment `json:"high_confidence"`   // confidence > 85%
+	MediumConfidence RiskAdjustment `json:"medium_confidence"` // 70-85%
+	LowConfidence    RiskAdjustment `json:"low_confidence"`    // < 70%
+}
+
+// VolatilityRiskAdjustment volatility-based risk adjustment
+type VolatilityRiskAdjustment struct {
+	HighVolatility   RiskAdjustment `json:"high_volatility"`   // ATR > threshold
+	MediumVolatility RiskAdjustment `json:"medium_volatility"` // normal range
+	LowVolatility    RiskAdjustment `json:"low_volatility"`    // ATR < threshold
+}
+
+// AlphaFactorConfig alpha factor configuration
+type AlphaFactorConfig struct {
+	// Liquidation clusters
+	EnableLiquidationClusters   bool    `json:"enable_liquidation_clusters"`
+	LiquidationClusterThreshold float64 `json:"liquidation_cluster_threshold"`
+	MinLiquidationUSD           float64 `json:"min_liquidation_usd"`
+
+	// Exchange flow
+	EnableExchangeFlow        bool    `json:"enable_exchange_flow"`
+	ExchangeFlowLookbackHours int     `json:"exchange_flow_lookback_hours"`
+	SignificantFlowThreshold  float64 `json:"significant_flow_threshold"`
+
+	// Whale wallet tracking
+	EnableWhaleWalletTracking bool     `json:"enable_whale_wallet_tracking"`
+	WhaleThresholdUSD         float64  `json:"whale_threshold_usd"`
+	TrackedWallets            []string `json:"tracked_wallets"`
+
+	// Spread expansion
+	EnableSpreadExpansion    bool    `json:"enable_spread_expansion"`
+	SpreadExpansionThreshold float64 `json:"spread_expansion_threshold"`
+
+	// Factor weights
+	FactorWeights map[string]float64 `json:"factor_weights"`
+}
+
 // KlineConfig K-line configuration
 type KlineConfig struct {
 	// primary timeframe: "1m", "3m", "5m", "15m", "1h", "4h"
@@ -284,10 +391,10 @@ type KlineConfig struct {
 
 // ExternalDataSource external data source configuration
 type ExternalDataSource struct {
-	Name        string            `json:"name"`         // data source name
-	Type        string            `json:"type"`         // type: "api" | "webhook"
-	URL         string            `json:"url"`          // API URL
-	Method      string            `json:"method"`       // HTTP method
+	Name        string            `json:"name"`   // data source name
+	Type        string            `json:"type"`   // type: "api" | "webhook"
+	URL         string            `json:"url"`    // API URL
+	Method      string            `json:"method"` // HTTP method
 	Headers     map[string]string `json:"headers,omitempty"`
 	DataPath    string            `json:"data_path,omitempty"`    // JSON data path
 	RefreshSecs int               `json:"refresh_secs,omitempty"` // refresh interval (seconds)
@@ -340,42 +447,42 @@ type RiskControlConfig struct {
 	TPATRMult float64 `json:"tp_atr_mult,omitempty"`
 
 	// Drawdown & Cooldown
-	DrawdownTPActivation   float64 `json:"drawdown_tp_activation,omitempty"`
-	DrawdownTPThreshold    float64 `json:"drawdown_tp_threshold,omitempty"`
-	SymbolCooldownMinutes  int     `json:"symbol_cooldown_minutes,omitempty"`
-	TimeoutExitMinutes     int     `json:"timeout_exit_minutes,omitempty"`
-	TimeoutMinProgressPct  float64 `json:"timeout_min_progress_pct,omitempty"`
+	DrawdownTPActivation  float64 `json:"drawdown_tp_activation,omitempty"`
+	DrawdownTPThreshold   float64 `json:"drawdown_tp_threshold,omitempty"`
+	SymbolCooldownMinutes int     `json:"symbol_cooldown_minutes,omitempty"`
+	TimeoutExitMinutes    int     `json:"timeout_exit_minutes,omitempty"`
+	TimeoutMinProgressPct float64 `json:"timeout_min_progress_pct,omitempty"`
 
 	// Dynamic Position Control
-	MaxPositionsMin        int     `json:"max_positions_min,omitempty"`
-	MaxPositionsMax        int     `json:"max_positions_max,omitempty"`
-	ScanIntervalBaseMinutes int    `json:"scan_interval_base_minutes,omitempty"`
-	ScanIntervalBaseMin     int    `json:"scan_interval_base_min,omitempty"`
-	ScanIntervalBaseMax     int    `json:"scan_interval_base_max,omitempty"`
+	MaxPositionsMin         int `json:"max_positions_min,omitempty"`
+	MaxPositionsMax         int `json:"max_positions_max,omitempty"`
+	ScanIntervalBaseMinutes int `json:"scan_interval_base_minutes,omitempty"`
+	ScanIntervalBaseMin     int `json:"scan_interval_base_min,omitempty"`
+	ScanIntervalBaseMax     int `json:"scan_interval_base_max,omitempty"`
 
 	// Holding & Exit
-	MinHoldMinutes                  int     `json:"min_hold_minutes,omitempty"`
-	MinCloseProfitPct               float64 `json:"min_close_profit_pct,omitempty"`
-	CloseWhenProfitExceedsPct       float64 `json:"close_when_profit_exceeds_pct,omitempty"`
-	CloseWhenDrawdownFromPeakPct    float64 `json:"close_when_drawdown_from_peak_pct,omitempty"`
+	MinHoldMinutes               int     `json:"min_hold_minutes,omitempty"`
+	MinCloseProfitPct            float64 `json:"min_close_profit_pct,omitempty"`
+	CloseWhenProfitExceedsPct    float64 `json:"close_when_profit_exceeds_pct,omitempty"`
+	CloseWhenDrawdownFromPeakPct float64 `json:"close_when_drawdown_from_peak_pct,omitempty"`
 
 	// ATR Risk
-	EnableATRRisk                  bool    `json:"enable_atr_risk"`
-	ATRPeriod                      int     `json:"atr_period,omitempty"`
-	ATRMultiplier                  float64 `json:"atr_multiplier,omitempty"`
-	EnableAdaptiveATRMultiplier    bool    `json:"enable_adaptive_atr_multiplier"`
-	ATRMultiplierMin               float64 `json:"atr_multiplier_min,omitempty"`
-	ATRMultiplierMax               float64 `json:"atr_multiplier_max,omitempty"`
+	EnableATRRisk               bool    `json:"enable_atr_risk"`
+	ATRPeriod                   int     `json:"atr_period,omitempty"`
+	ATRMultiplier               float64 `json:"atr_multiplier,omitempty"`
+	EnableAdaptiveATRMultiplier bool    `json:"enable_adaptive_atr_multiplier"`
+	ATRMultiplierMin            float64 `json:"atr_multiplier_min,omitempty"`
+	ATRMultiplierMax            float64 `json:"atr_multiplier_max,omitempty"`
 
 	// Dynamic Stop Loss & Risk
-	DefaultStopLossMinPct          float64 `json:"default_stop_loss_min_pct,omitempty"`
-	EnableDynamicStopLossMin       bool    `json:"enable_dynamic_stop_loss_min"`
-	StopLossMinIncreaseMaxPct      float64 `json:"stop_loss_min_increase_max_pct,omitempty"`
-	RiskPerTradePct                float64 `json:"risk_per_trade_pct,omitempty"`
-	EnableDynamicRiskPerTrade      bool    `json:"enable_dynamic_risk_per_trade"`
-	RiskPerTradeMinPct             float64 `json:"risk_per_trade_min_pct,omitempty"`
-	RiskPerTradeMaxPct             float64 `json:"risk_per_trade_max_pct,omitempty"`
-	RiskPerTradeRecentWindow       int     `json:"risk_per_trade_recent_window,omitempty"`
+	DefaultStopLossMinPct     float64 `json:"default_stop_loss_min_pct,omitempty"`
+	EnableDynamicStopLossMin  bool    `json:"enable_dynamic_stop_loss_min"`
+	StopLossMinIncreaseMaxPct float64 `json:"stop_loss_min_increase_max_pct,omitempty"`
+	RiskPerTradePct           float64 `json:"risk_per_trade_pct,omitempty"`
+	EnableDynamicRiskPerTrade bool    `json:"enable_dynamic_risk_per_trade"`
+	RiskPerTradeMinPct        float64 `json:"risk_per_trade_min_pct,omitempty"`
+	RiskPerTradeMaxPct        float64 `json:"risk_per_trade_max_pct,omitempty"`
+	RiskPerTradeRecentWindow  int     `json:"risk_per_trade_recent_window,omitempty"`
 
 	// Staged Take Profit
 	EnableStagedTakeProfit bool    `json:"enable_staged_take_profit"`
@@ -389,101 +496,101 @@ type RiskControlConfig struct {
 	Stage4CloseRatio       float64 `json:"stage4_close_ratio,omitempty"`
 
 	// Sideways Handling
-	EnableSidewaysTimeDecayClose                bool    `json:"enable_sideways_time_decay_close"`
-	EnableSidewaysMicroGrid                     bool    `json:"enable_sideways_micro_grid"`
-	SidewaysBandPct                             float64 `json:"sideways_band_pct,omitempty"`
-	SidewaysMinDurationMin                      int     `json:"sideways_min_duration_min,omitempty"`
-	SidewaysCloseProfitPct                      float64 `json:"sideways_close_profit_pct,omitempty"`
-	SidewaysCloseRatio                          float64 `json:"sideways_close_ratio,omitempty"`
-	UseSidewaysRatioThreshold                   bool    `json:"use_sideways_ratio_threshold"`
-	SidewaysRatioMin                            float64 `json:"sideways_ratio_min,omitempty"`
+	EnableSidewaysTimeDecayClose                 bool    `json:"enable_sideways_time_decay_close"`
+	EnableSidewaysMicroGrid                      bool    `json:"enable_sideways_micro_grid"`
+	SidewaysBandPct                              float64 `json:"sideways_band_pct,omitempty"`
+	SidewaysMinDurationMin                       int     `json:"sideways_min_duration_min,omitempty"`
+	SidewaysCloseProfitPct                       float64 `json:"sideways_close_profit_pct,omitempty"`
+	SidewaysCloseRatio                           float64 `json:"sideways_close_ratio,omitempty"`
+	UseSidewaysRatioThreshold                    bool    `json:"use_sideways_ratio_threshold"`
+	SidewaysRatioMin                             float64 `json:"sideways_ratio_min,omitempty"`
 	RequireIndicesDeteriorationForTimeDecayClose bool    `json:"require_indices_deterioration_for_time_decay_close"`
-	TimeDecayDeteriorationMinSignals            int     `json:"time_decay_deterioration_min_signals,omitempty"`
-	SidewaysBandLowerCoeff                      float64 `json:"sideways_band_lower_coeff,omitempty"`
-	SidewaysBandUpperCoeff                      float64 `json:"sideways_band_upper_coeff,omitempty"`
-	SidewaysHeatWeightedRatioThreshold          float64 `json:"sideways_heat_weighted_ratio_threshold,omitempty"`
+	TimeDecayDeteriorationMinSignals             int     `json:"time_decay_deterioration_min_signals,omitempty"`
+	SidewaysBandLowerCoeff                       float64 `json:"sideways_band_lower_coeff,omitempty"`
+	SidewaysBandUpperCoeff                       float64 `json:"sideways_band_upper_coeff,omitempty"`
+	SidewaysHeatWeightedRatioThreshold           float64 `json:"sideways_heat_weighted_ratio_threshold,omitempty"`
 
 	// Trend Stop Loss
-	EnableTrendStopLoss             bool    `json:"enable_trend_stop_loss"`
-	TrendStopLossMinSignals         int     `json:"trend_stop_loss_min_signals,omitempty"`
-	TrendStopLossTriggerLossPct     float64 `json:"trend_stop_loss_trigger_loss_pct,omitempty"`
-	TrendStopLossMinHoldMinutes     int     `json:"trend_stop_loss_min_hold_minutes,omitempty"`
+	EnableTrendStopLoss         bool    `json:"enable_trend_stop_loss"`
+	TrendStopLossMinSignals     int     `json:"trend_stop_loss_min_signals,omitempty"`
+	TrendStopLossTriggerLossPct float64 `json:"trend_stop_loss_trigger_loss_pct,omitempty"`
+	TrendStopLossMinHoldMinutes int     `json:"trend_stop_loss_min_hold_minutes,omitempty"`
 
 	// Execution & Monitoring
-	TakeProfitMonitorIntervalSec    int     `json:"take_profit_monitor_interval_sec,omitempty"`
-	LossThrottleSec                 int     `json:"loss_throttle_sec,omitempty"`
-	UnplacedTTLMs                   int     `json:"unplaced_ttl_ms,omitempty"`
-	UnplacedTTLMsMin                int     `json:"unplaced_ttl_ms_min,omitempty"`
-	UnplacedTTLMsMax                int     `json:"unplaced_ttl_ms_max,omitempty"`
+	TakeProfitMonitorIntervalSec int `json:"take_profit_monitor_interval_sec,omitempty"`
+	LossThrottleSec              int `json:"loss_throttle_sec,omitempty"`
+	UnplacedTTLMs                int `json:"unplaced_ttl_ms,omitempty"`
+	UnplacedTTLMsMin             int `json:"unplaced_ttl_ms_min,omitempty"`
+	UnplacedTTLMsMax             int `json:"unplaced_ttl_ms_max,omitempty"`
 
 	// Trailing Stop
-	TrailingStopMode                string  `json:"trailing_stop_mode,omitempty"`
-	TrailingStopCallbackRatePct     float64 `json:"trailing_stop_callback_rate_pct,omitempty"`
-	TPSLOrderUpdateCooldownSec      int     `json:"tp_sl_order_update_cooldown_sec,omitempty"`
-	TrailingStopAppMinIntervalSec   int     `json:"trailing_stop_app_min_interval_sec,omitempty"`
+	TrailingStopMode              string  `json:"trailing_stop_mode,omitempty"`
+	TrailingStopCallbackRatePct   float64 `json:"trailing_stop_callback_rate_pct,omitempty"`
+	TPSLOrderUpdateCooldownSec    int     `json:"tp_sl_order_update_cooldown_sec,omitempty"`
+	TrailingStopAppMinIntervalSec int     `json:"trailing_stop_app_min_interval_sec,omitempty"`
 
 	// Dynamic Take Profit
-	EnableDynamicTakeProfit         bool              `json:"enable_dynamic_take_profit"`
-	EnableROETPLadder               bool              `json:"enable_roe_tp_ladder"`
-	StagedActivationPeakROEPct      float64           `json:"staged_activation_peak_roe_pct,omitempty"`
-	DynamicTPLadder                 []DynamicTPConfig `json:"dynamic_tp_ladder,omitempty"`
+	EnableDynamicTakeProfit    bool              `json:"enable_dynamic_take_profit"`
+	EnableROETPLadder          bool              `json:"enable_roe_tp_ladder"`
+	StagedActivationPeakROEPct float64           `json:"staged_activation_peak_roe_pct,omitempty"`
+	DynamicTPLadder            []DynamicTPConfig `json:"dynamic_tp_ladder,omitempty"`
 
 	// Evolution & Factors
-	EnableFullAutoEvolution         bool            `json:"enable_full_auto_evolution"`
-	EnableAutoTuneThresholds        bool            `json:"enable_auto_tune_thresholds"`
-	AutoTuneLookbackMinutes         int             `json:"auto_tune_lookback_minutes,omitempty"`
-	LastAutoTuneMs                  int64           `json:"last_auto_tune_ms,omitempty"`
-	EnableAIEvolution               bool            `json:"enable_ai_evolution"`
-	EvolutionMode                   string          `json:"evolution_mode,omitempty"`
-	AIEvolutionMinTrades            int             `json:"ai_evolution_min_trades,omitempty"`
-	ReliabilityFloor                float64         `json:"reliability_floor,omitempty"`
-	DirectionQuantileLevel          float64         `json:"direction_quantile_level,omitempty"`
-	DirectionPoolIncludePositions   bool            `json:"direction_pool_include_positions"`
-	DirectionVolumePriceDivergence  bool            `json:"direction_volume_price_divergence"`
-	ThresholdVolumeSpikeNormGreen   float64         `json:"threshold_volume_spike_norm_green,omitempty"`
-	ThresholdFundingRatePosPct      float64         `json:"threshold_funding_rate_pos_pct,omitempty"`
-	ThresholdOBImbalancePos         float64         `json:"threshold_ob_imbalance_pos,omitempty"`
-	ReliabilityFloorMin             float64         `json:"reliability_floor_min,omitempty"`
-	ReliabilityFloorMax             float64         `json:"reliability_floor_max,omitempty"`
-	DirectionQuantileMin            float64         `json:"direction_quantile_min,omitempty"`
-	DirectionQuantileMax            float64         `json:"direction_quantile_max,omitempty"`
-	VolumeSpikeThresholdMin         float64         `json:"volume_spike_threshold_min,omitempty"`
-	VolumeSpikeThresholdMax         float64         `json:"volume_spike_threshold_max,omitempty"`
-	OIThresholdMin                  float64         `json:"oi_threshold_min,omitempty"`
-	OIThresholdMax                  float64         `json:"oi_threshold_max,omitempty"`
-	MTFSmallAlignThreshold          float64         `json:"mtf_small_align_threshold,omitempty"`
-	MTFMedAlignThreshold            float64         `json:"mtf_med_align_threshold,omitempty"`
-	MTFHighAlignThreshold           float64         `json:"mtf_high_align_threshold,omitempty"`
-	SidewaysBandWeightATR           float64         `json:"sideways_band_weight_atr,omitempty"`
-	SidewaysBandWeightVol           float64         `json:"sideways_band_weight_vol,omitempty"`
-	SidewaysBandWeightReliability   float64         `json:"sideways_band_weight_reliability,omitempty"`
-	QuantileWeightMode              string          `json:"quantile_weight_mode,omitempty"`
-	DirectionMinGap                 float64         `json:"direction_min_gap,omitempty"`
-	ReliabilityWeightAlign          float64         `json:"reliability_weight_align,omitempty"`
-	ReliabilityWeightHeatInv        float64         `json:"reliability_weight_heat_inv,omitempty"`
-	ReliabilityWeightZPenInv        float64         `json:"reliability_weight_zpen_inv,omitempty"`
-	ReliabilityWeightFund           float64         `json:"reliability_weight_fund,omitempty"`
-	ReliabilityWeightOBInv          float64         `json:"reliability_weight_ob_inv,omitempty"`
-	DirectionCoreVoteMultiplier     float64         `json:"direction_core_vote_multiplier,omitempty"`
-	AdaptiveConsistencyStep         float64         `json:"adaptive_consistency_step,omitempty"`
-	WinRateTightenThreshold         float64         `json:"win_rate_tighten_threshold,omitempty"`
-	MaxDrawdownTightenThresholdPct  float64         `json:"max_drawdown_tighten_threshold_pct,omitempty"`
-	EntryConfidenceMin              float64         `json:"entry_confidence_min,omitempty"`
-	EntryWindowMinMin               int             `json:"entry_window_min_min,omitempty"`
-	EntryWindowMaxMin               int             `json:"entry_window_max_min,omitempty"`
-	EntryUrgencyNowMaxMin           int             `json:"entry_urgency_now_max_min,omitempty"`
-	EntryUrgencySoonMaxMin          int             `json:"entry_urgency_soon_max_min,omitempty"`
-	EntryRSIOverboughtSoft          float64         `json:"entry_rsi_overbought_soft,omitempty"`
-	EntryRSIOverboughtHard          float64         `json:"entry_rsi_overbought_hard,omitempty"`
-	EntryRSIOversoldSoft            float64         `json:"entry_rsi_oversold_soft,omitempty"`
-	EntryRSIOversoldHard            float64         `json:"entry_rsi_oversold_hard,omitempty"`
-	MinFactorPass                   int             `json:"min_factor_pass,omitempty"`
-	MinReliabilityForSubmit         float64         `json:"min_reliability_for_submit,omitempty"`
-	ThresholdHeatScoreGold          float64         `json:"threshold_heat_score_gold,omitempty"`
-	ThresholdATRUtilGreenPct        float64         `json:"threshold_atr_util_green_pct,omitempty"`
-	FactorLibraryEnabled            map[string]bool `json:"factor_library_enabled,omitempty"`
-	FirstLayerMinPassCount          int             `json:"first_layer_min_pass_count,omitempty"`
-	AllowTradeWhenAIFails           bool            `json:"allow_trade_when_ai_fails"`
+	EnableFullAutoEvolution        bool            `json:"enable_full_auto_evolution"`
+	EnableAutoTuneThresholds       bool            `json:"enable_auto_tune_thresholds"`
+	AutoTuneLookbackMinutes        int             `json:"auto_tune_lookback_minutes,omitempty"`
+	LastAutoTuneMs                 int64           `json:"last_auto_tune_ms,omitempty"`
+	EnableAIEvolution              bool            `json:"enable_ai_evolution"`
+	EvolutionMode                  string          `json:"evolution_mode,omitempty"`
+	AIEvolutionMinTrades           int             `json:"ai_evolution_min_trades,omitempty"`
+	ReliabilityFloor               float64         `json:"reliability_floor,omitempty"`
+	DirectionQuantileLevel         float64         `json:"direction_quantile_level,omitempty"`
+	DirectionPoolIncludePositions  bool            `json:"direction_pool_include_positions"`
+	DirectionVolumePriceDivergence bool            `json:"direction_volume_price_divergence"`
+	ThresholdVolumeSpikeNormGreen  float64         `json:"threshold_volume_spike_norm_green,omitempty"`
+	ThresholdFundingRatePosPct     float64         `json:"threshold_funding_rate_pos_pct,omitempty"`
+	ThresholdOBImbalancePos        float64         `json:"threshold_ob_imbalance_pos,omitempty"`
+	ReliabilityFloorMin            float64         `json:"reliability_floor_min,omitempty"`
+	ReliabilityFloorMax            float64         `json:"reliability_floor_max,omitempty"`
+	DirectionQuantileMin           float64         `json:"direction_quantile_min,omitempty"`
+	DirectionQuantileMax           float64         `json:"direction_quantile_max,omitempty"`
+	VolumeSpikeThresholdMin        float64         `json:"volume_spike_threshold_min,omitempty"`
+	VolumeSpikeThresholdMax        float64         `json:"volume_spike_threshold_max,omitempty"`
+	OIThresholdMin                 float64         `json:"oi_threshold_min,omitempty"`
+	OIThresholdMax                 float64         `json:"oi_threshold_max,omitempty"`
+	MTFSmallAlignThreshold         float64         `json:"mtf_small_align_threshold,omitempty"`
+	MTFMedAlignThreshold           float64         `json:"mtf_med_align_threshold,omitempty"`
+	MTFHighAlignThreshold          float64         `json:"mtf_high_align_threshold,omitempty"`
+	SidewaysBandWeightATR          float64         `json:"sideways_band_weight_atr,omitempty"`
+	SidewaysBandWeightVol          float64         `json:"sideways_band_weight_vol,omitempty"`
+	SidewaysBandWeightReliability  float64         `json:"sideways_band_weight_reliability,omitempty"`
+	QuantileWeightMode             string          `json:"quantile_weight_mode,omitempty"`
+	DirectionMinGap                float64         `json:"direction_min_gap,omitempty"`
+	ReliabilityWeightAlign         float64         `json:"reliability_weight_align,omitempty"`
+	ReliabilityWeightHeatInv       float64         `json:"reliability_weight_heat_inv,omitempty"`
+	ReliabilityWeightZPenInv       float64         `json:"reliability_weight_zpen_inv,omitempty"`
+	ReliabilityWeightFund          float64         `json:"reliability_weight_fund,omitempty"`
+	ReliabilityWeightOBInv         float64         `json:"reliability_weight_ob_inv,omitempty"`
+	DirectionCoreVoteMultiplier    float64         `json:"direction_core_vote_multiplier,omitempty"`
+	AdaptiveConsistencyStep        float64         `json:"adaptive_consistency_step,omitempty"`
+	WinRateTightenThreshold        float64         `json:"win_rate_tighten_threshold,omitempty"`
+	MaxDrawdownTightenThresholdPct float64         `json:"max_drawdown_tighten_threshold_pct,omitempty"`
+	EntryConfidenceMin             float64         `json:"entry_confidence_min,omitempty"`
+	EntryWindowMinMin              int             `json:"entry_window_min_min,omitempty"`
+	EntryWindowMaxMin              int             `json:"entry_window_max_min,omitempty"`
+	EntryUrgencyNowMaxMin          int             `json:"entry_urgency_now_max_min,omitempty"`
+	EntryUrgencySoonMaxMin         int             `json:"entry_urgency_soon_max_min,omitempty"`
+	EntryRSIOverboughtSoft         float64         `json:"entry_rsi_overbought_soft,omitempty"`
+	EntryRSIOverboughtHard         float64         `json:"entry_rsi_overbought_hard,omitempty"`
+	EntryRSIOversoldSoft           float64         `json:"entry_rsi_oversold_soft,omitempty"`
+	EntryRSIOversoldHard           float64         `json:"entry_rsi_oversold_hard,omitempty"`
+	MinFactorPass                  int             `json:"min_factor_pass,omitempty"`
+	MinReliabilityForSubmit        float64         `json:"min_reliability_for_submit,omitempty"`
+	ThresholdHeatScoreGold         float64         `json:"threshold_heat_score_gold,omitempty"`
+	ThresholdATRUtilGreenPct       float64         `json:"threshold_atr_util_green_pct,omitempty"`
+	FactorLibraryEnabled           map[string]bool `json:"factor_library_enabled,omitempty"`
+	FirstLayerMinPassCount         int             `json:"first_layer_min_pass_count,omitempty"`
+	AllowTradeWhenAIFails          bool            `json:"allow_trade_when_ai_fails"`
 }
 
 // DynamicTPConfig dynamic take profit configuration
@@ -576,15 +683,15 @@ func GetDefaultStrategyConfig(lang string) StrategyConfig {
 			},
 		},
 		RiskControl: RiskControlConfig{
-			MaxPositions:                    3,   // Max 3 coins simultaneously (CODE ENFORCED)
-			BTCETHMaxLeverage:               5,   // BTC/ETH exchange leverage (AI guided)
-			AltcoinMaxLeverage:              5,   // Altcoin exchange leverage (AI guided)
-			BTCETHMaxPositionValueRatio:     5.0, // BTC/ETH: max position = 5x equity (CODE ENFORCED)
-			AltcoinMaxPositionValueRatio:    1.0, // Altcoin: max position = 1x equity (CODE ENFORCED)
-			MaxMarginUsage:                  0.9, // Max 90% margin usage (CODE ENFORCED)
-			MinPositionSize:                 12,  // Min 12 USDT per position (CODE ENFORCED)
-			MinRiskRewardRatio:              3.0, // Min 3:1 profit/loss ratio (AI guided)
-			MinConfidence:                   75,  // Min 75% confidence (AI guided)
+			MaxPositions:                 3,   // Max 3 coins simultaneously (CODE ENFORCED)
+			BTCETHMaxLeverage:            5,   // BTC/ETH exchange leverage (AI guided)
+			AltcoinMaxLeverage:           5,   // Altcoin exchange leverage (AI guided)
+			BTCETHMaxPositionValueRatio:  5.0, // BTC/ETH: max position = 5x equity (CODE ENFORCED)
+			AltcoinMaxPositionValueRatio: 1.0, // Altcoin: max position = 1x equity (CODE ENFORCED)
+			MaxMarginUsage:               0.9, // Max 90% margin usage (CODE ENFORCED)
+			MinPositionSize:              12,  // Min 12 USDT per position (CODE ENFORCED)
+			MinRiskRewardRatio:           3.0, // Min 3:1 profit/loss ratio (AI guided)
+			MinConfidence:                75,  // Min 75% confidence (AI guided)
 		},
 	}
 

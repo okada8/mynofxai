@@ -1,0 +1,17 @@
+AI Quant Project Roadmap
+Phase 1
+Stable trading engine with backtesting and risk control.
+
+Phase 2
+AI market intelligence and regime detection.
+
+Phase 3
+Strategy evolution using genetic algorithms.
+
+Phase 4
+Multi■agent AI trading system with voting mechanism.
+
+Long Term Vision
+Autonomous AI trading OS capable of discovering and deploying strategies automatically.
+
+

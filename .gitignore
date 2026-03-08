@@ -10,10 +10,11 @@ CLAUDE.md
 # 编译产物
 nofx-auto
 *.exe
+*.pdf
 nofx
 nofx_server
 nofx_test
-
+scripts/
 # Go 相关
 *.test
 *.out
@@ -78,6 +79,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+docs/
 downloads/
 eggs/
 .eggs/

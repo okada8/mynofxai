@@ -1,0 +1,11 @@
+Execution Engine Design
+Execution Reliability
+Execution engines must handle network failures and partial fills.
+
+Order State Machine
+pending submitted filled partially_filled cancelled failed
+
+Retry Logic
+try: place_order() except: retry(3)
+
+

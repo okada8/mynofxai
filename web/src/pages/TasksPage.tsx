@@ -149,6 +149,24 @@ export function TasksPage() {
     }
   }
 
+  const handleToggle = async (task: Task) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ enabled: !task.enabled })
+      })
+      if (!res.ok) throw new Error('Update failed')
+      notify.success(language === 'zh' ? (task.enabled ? '已禁用' : '已启用') : (task.enabled ? 'Disabled' : 'Enabled'))
+      fetchTasks()
+    } catch (err) {
+      notify.error(language === 'zh' ? '更新失败' : 'Failed to update')
+    }
+  }
+
   const openModal = (task?: Task) => {
     if (task) {
       setEditingTask(task)
@@ -211,13 +229,19 @@ export function TasksPage() {
                       <span>{task.cron_expression}</span>
                     </div>
                   </div>
-                </div>
-                <div className="relative">
-                  <div className={`w-2 h-2 rounded-full ${task.enabled ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                </div>
               </div>
+              <div className="relative">
+                <button
+                  onClick={() => handleToggle(task)}
+                  className={`w-10 h-5 rounded-full transition-colors flex items-center px-1 ${task.enabled ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}
+                  title={task.enabled ? (language === 'zh' ? '点击禁用' : 'Click to disable') : (language === 'zh' ? '点击启用' : 'Click to enable')}
+                >
+                  <div className={`w-3 h-3 rounded-full shadow-md transition-transform transform ${task.enabled ? 'translate-x-5 bg-green-500' : 'translate-x-0 bg-red-500'}`} />
+                </button>
+              </div>
+            </div>
 
-              <div className="space-y-2 mb-6 text-sm text-nofx-text-muted">
+            <div className="space-y-2 mb-6 text-sm text-nofx-text-muted">
                 <div className="flex justify-between">
                   <span>Last Run:</span>
                   <span className="font-mono text-white">

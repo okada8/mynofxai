@@ -473,6 +473,9 @@ export interface StrategyConfig {
   indicators: IndicatorConfig;
   custom_prompt?: string;
   risk_control: RiskControlConfig;
+  risk_control_enhanced?: RiskControlEnhanced; // New in nofx 2.0
+  alpha_factors?: AlphaFactorConfig;           // New in nofx 2.0
+  multi_agent?: MultiAgentConfig;              // New in nofx 2.0
   prompt_sections?: PromptSectionsConfig;
   // Grid trading configuration (only used when strategy_type is 'grid_trading')
   grid_config?: GridStrategyConfig;
@@ -607,6 +610,39 @@ export interface RiskControlConfig {
   min_position_size: number;       // Min position size in USDT (CODE ENFORCED)
   min_risk_reward_ratio: number;   // Min take_profit / stop_loss ratio (AI guided)
   min_confidence: number;          // Min AI confidence to open position (AI guided)
+}
+
+// Enhanced Risk Control (nofx 2.0)
+export interface RiskControlEnhanced {
+  max_drawdown_pct: number;        // Max account drawdown percentage
+  daily_loss_limit_pct: number;    // Daily loss limit percentage
+  max_leverage_volatility_adj: boolean; // Auto-adjust leverage based on volatility
+  min_distance_to_liquidation: number; // Minimum distance to liquidation price (%)
+  risk_level: 'low' | 'medium' | 'high' | 'custom';
+}
+
+// Alpha Factors Configuration (nofx 2.0)
+export interface AlphaFactorConfig {
+  enable_liquidation_clusters: boolean;
+  liquidation_cluster_weight: number;
+  enable_netflow_ranking: boolean;
+  netflow_ranking_weight: number;
+  enable_whale_activity: boolean;
+  whale_activity_weight: number;
+  enable_sentiment_analysis: boolean;
+  sentiment_weight: number;
+}
+
+// Multi-Agent Configuration (nofx 2.0)
+export interface MultiAgentConfig {
+  enabled: boolean;
+  mode: 'debate' | 'consensus' | 'hierarchical'; // Decision mode
+  agents: {
+    role: string; // risk_manager, alpha_hunter, analyst, executor
+    model_id: string; // AI Model ID
+    enabled: boolean;
+    parameters?: Record<string, any>;
+  }[];
 }
 
 // Debate Arena Types

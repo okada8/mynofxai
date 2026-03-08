@@ -1,21 +1,26 @@
-import { Shield, AlertTriangle } from 'lucide-react'
-import type { RiskControlConfig } from '../../types'
+import { Shield, AlertTriangle, Zap } from 'lucide-react'
+import type { RiskControlConfig, RiskControlEnhanced } from '../../types'
 
 interface RiskControlEditorProps {
   config: RiskControlConfig
+  enhancedConfig?: RiskControlEnhanced
   onChange: (config: RiskControlConfig) => void
+  onEnhancedChange?: (config: RiskControlEnhanced) => void
   disabled?: boolean
   language: string
 }
 
 export function RiskControlEditor({
   config,
+  enhancedConfig,
   onChange,
+  onEnhancedChange,
   disabled,
   language,
 }: RiskControlEditorProps) {
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
+      // ... existing translations ...
       positionLimits: { zh: '仓位限制', en: 'Position Limits' },
       maxPositions: { zh: '最大持仓数量', en: 'Max Positions' },
       maxPositionsDesc: { zh: '同时持有的最大币种数量', en: 'Maximum coins held simultaneously' },
@@ -42,6 +47,18 @@ export function RiskControlEditor({
       minPositionSizeDesc: { zh: 'USDT 最小名义价值', en: 'Minimum notional value in USDT' },
       minConfidence: { zh: '最小信心度', en: 'Min Confidence' },
       minConfidenceDesc: { zh: 'AI 开仓信心度阈值', en: 'AI confidence threshold for entry' },
+      
+      // Enhanced Risk Control
+      enhancedRisk: { zh: '高级风控 (2.0)', en: 'Enhanced Risk Control (2.0)' },
+      enhancedRiskDesc: { zh: '动态风控与账户级保护设置', en: 'Dynamic risk control and account-level protection' },
+      maxDrawdown: { zh: '最大回撤保护', en: 'Max Drawdown Protection' },
+      maxDrawdownDesc: { zh: '账户净值回撤达到此比例时停止交易', en: 'Stop trading when account drawdown reaches this %' },
+      dailyLoss: { zh: '每日亏损限额', en: 'Daily Loss Limit' },
+      dailyLossDesc: { zh: '单日亏损达到此比例时停止交易', en: 'Stop trading when daily loss reaches this %' },
+      volatilityAdj: { zh: '波动率杠杆调整', en: 'Volatility Leverage Adj' },
+      volatilityAdjDesc: { zh: '基于市场波动率自动降低杠杆', en: 'Auto-reduce leverage based on market volatility' },
+      liquidationDist: { zh: '强平距离保护', en: 'Min Liquidation Distance' },
+      liquidationDistDesc: { zh: '维持强平价格距离当前价格的最小百分比', en: 'Minimum distance % from current price to liquidation price' },
     }
     return translations[key]?.[language] || key
   }
@@ -53,6 +70,24 @@ export function RiskControlEditor({
     if (!disabled) {
       onChange({ ...config, [key]: value })
     }
+  }
+
+  const updateEnhancedField = <K extends keyof RiskControlEnhanced>(
+    key: K,
+    value: RiskControlEnhanced[K]
+  ) => {
+    if (!disabled && onEnhancedChange && enhancedConfig) {
+      onEnhancedChange({ ...enhancedConfig, [key]: value })
+    }
+  }
+
+  // Default enhanced config if not present
+  const safeEnhancedConfig = enhancedConfig || {
+    max_drawdown_pct: 20,
+    daily_loss_limit_pct: 5,
+    max_leverage_volatility_adj: true,
+    min_distance_to_liquidation: 5,
+    risk_level: 'medium',
   }
 
   return (
@@ -386,6 +421,135 @@ export function RiskControlEditor({
           </div>
         </div>
       </div>
+
+      {/* Enhanced Risk Control (nofx 2.0) */}
+      {enhancedConfig && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="w-5 h-5" style={{ color: '#F6465D' }} />
+            <h3 className="font-medium" style={{ color: '#EAECEF' }}>
+              {t('enhancedRisk')}
+            </h3>
+          </div>
+          <p className="text-xs mb-4" style={{ color: '#848E9C' }}>
+            {t('enhancedRiskDesc')}
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Max Drawdown */}
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+            >
+              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+                {t('maxDrawdown')}
+              </label>
+              <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
+                {t('maxDrawdownDesc')}
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  value={safeEnhancedConfig.max_drawdown_pct}
+                  onChange={(e) =>
+                    updateEnhancedField('max_drawdown_pct', parseInt(e.target.value))
+                  }
+                  disabled={disabled}
+                  min={5}
+                  max={50}
+                  className="flex-1 accent-red-500"
+                />
+                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                  {safeEnhancedConfig.max_drawdown_pct}%
+                </span>
+              </div>
+            </div>
+
+            {/* Daily Loss Limit */}
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+            >
+              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+                {t('dailyLoss')}
+              </label>
+              <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
+                {t('dailyLossDesc')}
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  value={safeEnhancedConfig.daily_loss_limit_pct}
+                  onChange={(e) =>
+                    updateEnhancedField('daily_loss_limit_pct', parseInt(e.target.value))
+                  }
+                  disabled={disabled}
+                  min={1}
+                  max={20}
+                  className="flex-1 accent-red-500"
+                />
+                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                  {safeEnhancedConfig.daily_loss_limit_pct}%
+                </span>
+              </div>
+            </div>
+
+            {/* Liquidation Distance */}
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+            >
+              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+                {t('liquidationDist')}
+              </label>
+              <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
+                {t('liquidationDistDesc')}
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  value={safeEnhancedConfig.min_distance_to_liquidation}
+                  onChange={(e) =>
+                    updateEnhancedField('min_distance_to_liquidation', parseInt(e.target.value))
+                  }
+                  disabled={disabled}
+                  min={1}
+                  max={20}
+                  className="flex-1 accent-red-500"
+                />
+                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                  {safeEnhancedConfig.min_distance_to_liquidation}%
+                </span>
+              </div>
+            </div>
+
+            {/* Volatility Adjustment Toggle */}
+            <div
+              className="p-4 rounded-lg flex items-center justify-between"
+              style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+            >
+              <div>
+                <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+                  {t('volatilityAdj')}
+                </label>
+                <p className="text-xs" style={{ color: '#848E9C' }}>
+                  {t('volatilityAdjDesc')}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={safeEnhancedConfig.max_leverage_volatility_adj}
+                  onChange={(e) => updateEnhancedField('max_leverage_volatility_adj', e.target.checked)}
+                  disabled={disabled}
+                />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
