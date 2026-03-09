@@ -2,7 +2,9 @@ package optimizer
 
 import (
 	"math/rand"
+	"runtime"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -127,16 +129,35 @@ func (o *Optimizer) randomChromosome() Chromosome {
 
 // evaluatePopulation runs backtests for all chromosomes
 func (o *Optimizer) evaluatePopulation(pop []Chromosome, bt Backtester) {
-	// Parallel evaluation could be implemented here
-	// For now, sequential to avoid resource contention
-	for i := range pop {
-		// Skip if already evaluated (fitness > 0 or specific flag)
-		// Here we assume 0 is not evaluated (risk: what if profit is 0?)
-		// Better to use a flag, but for now re-evaluating is safer
-		
-		res := bt.RunStrategy(pop[i])
-		pop[i].Fitness = o.calculateFitness(res)
+	// Parallel evaluation using worker pool pattern
+	// Use 2x CPU cores for concurrency (since backtest might be IO bound or waiting)
+	numWorkers := runtime.NumCPU() * 2
+	if numWorkers > len(pop) {
+		numWorkers = len(pop)
 	}
+	if numWorkers < 1 {
+		numWorkers = 1
+	}
+
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, numWorkers)
+
+	for i := range pop {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			
+			// Acquire token
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			// Execute backtest
+			res := bt.RunStrategy(pop[idx])
+			pop[idx].Fitness = o.calculateFitness(res)
+		}(i)
+	}
+
+	wg.Wait()
 	
 	// Sort by fitness descending
 	sort.Slice(pop, func(i, j int) bool {

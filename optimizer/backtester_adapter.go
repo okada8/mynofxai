@@ -56,21 +56,33 @@ func (b *GABacktester) RunStrategy(c Chromosome) BacktestResult {
 		}
 	}
 
-	// 3. Setup backtest runner
-	// Inject modified strategy config into backtest config
-	b.btConfig.SetLoadedStrategy(&cfg)
+	// 3. Validate configuration
+	// Simple validation to prevent crashes
+	if cfg.RiskControl.MaxPositions <= 0 {
+		cfg.RiskControl.MaxPositions = 1
+	}
+	if cfg.RiskControl.SLATRMult < 0 {
+		cfg.RiskControl.SLATRMult = 1.0
+	}
+	if cfg.RiskControl.TPATRMult < 0 {
+		cfg.RiskControl.TPATRMult = 1.0
+	}
+	// Add more validation as needed
+
+	// 4. Run backtest
+	// Use RunID to avoid collision
+	btConfigCopy := b.btConfig
+	if btConfigCopy.RunID == "" || strings.HasPrefix(btConfigCopy.RunID, "opt_") {
+		btConfigCopy.RunID = fmt.Sprintf("opt_%d_%s", time.Now().UnixNano(), randString(6))
+	}
+	// Important: We must set the strategy on the COPY of the config, not the original shared one
+	btConfigCopy.SetLoadedStrategy(&cfg)
 	
-	runner, err := backtest.NewRunner(b.btConfig, b.aiClient)
+	runner, err := backtest.NewRunner(btConfigCopy, b.aiClient)
 	if err != nil {
 		return BacktestResult{Error: err.Error()}
 	}
 
-	// 4. Run backtest
-	// Use RunID to avoid collision
-	if b.btConfig.RunID == "" {
-		b.btConfig.RunID = fmt.Sprintf("opt_%d_%s", time.Now().UnixNano(), randString(6))
-	}
-	
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
@@ -92,7 +104,7 @@ func (b *GABacktester) RunStrategy(c Chromosome) BacktestResult {
 	// Calculate returns for Sharpe ratio
 	// Need daily equity points
 	equityPoints, _ := runner.GetEquityPoints()
-	returns := calculateReturns(equityPoints)
+	returns := CalculateReturns(equityPoints)
 
 	// Calculate missing metrics
 	initialBalance := b.btConfig.InitialBalance
@@ -144,8 +156,8 @@ func setFieldValue(obj interface{}, path string, value float64) error {
 	return nil
 }
 
-// calculateReturns calculates daily returns from equity points
-func calculateReturns(points []backtest.EquityPoint) []float64 {
+// CalculateReturns calculates daily returns from equity points
+func CalculateReturns(points []backtest.EquityPoint) []float64 {
 	if len(points) < 2 {
 		return nil
 	}
@@ -160,14 +172,7 @@ func calculateReturns(points []backtest.EquityPoint) []float64 {
 		dailyEquity[date] = p.Equity
 		
 		// Maintain order
-		found := false
-		for _, d := range dates {
-			if d == date {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if len(dates) == 0 || dates[len(dates)-1] != date {
 			dates = append(dates, date)
 		}
 	}

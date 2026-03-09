@@ -321,9 +321,9 @@ export function StrategyOptimizer({ strategyId, config, onApplyParams, language 
                     onChange={e => setTarget(e.target.value)}
                     className="w-full px-2 py-1.5 bg-black/30 border border-nofx-gold/10 rounded text-xs text-nofx-text"
                   >
-                    <option value="profit">Total Profit</option>
-                    <option value="sharpe">Sharpe Ratio</option>
-                    <option value="drawdown">Min Drawdown</option>
+                    <option value="profit">{language === 'zh' ? '总收益' : 'Total Profit'}</option>
+                    <option value="sharpe">{language === 'zh' ? '夏普比率' : 'Sharpe Ratio'}</option>
+                    <option value="drawdown">{language === 'zh' ? '最小回撤' : 'Min Drawdown'}</option>
                   </select>
                 </div>
                 <div>

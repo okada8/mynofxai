@@ -72,8 +72,9 @@ func InitGormPostgres(host string, port int, user, password, dbname, sslmode str
 	if err != nil {
 		return nil, err
 	}
-	sqlDB.SetMaxOpenConns(25)
-	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	gormDB = db
 	return db, nil
