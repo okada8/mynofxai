@@ -1,10 +1,5 @@
 package backtest
 
-import (
-	"fmt"
-	"math"
-)
-
 // StressScenario defines a specific market crash or stress event.
 type StressScenario struct {
 	Name                 string

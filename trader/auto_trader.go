@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"nofx/backtest"
 	"nofx/experience"
 	"nofx/kernel"
 	"nofx/logger"
@@ -1277,6 +1278,13 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 		return err
 	}
 
+	// [SMART ORDER ROUTER] Large Order Detection
+	// Threshold: 50,000 USD (simplified)
+	if decision.PositionSizeUSD > 50000 {
+		logger.Infof("  🤖 [SmartOrderRouter] Large order detected (%.2f USD). Recommendation: Split into chunks (TWAP)", decision.PositionSizeUSD)
+		// In future: Call backtest.OrderSplitter here
+	}
+
 	// Calculate quantity with adjusted position size
 	quantity := actualPositionSize / marketData.CurrentPrice
 	actionRecord.Quantity = quantity
@@ -1425,6 +1433,12 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 	// [CODE ENFORCED] Minimum position size check
 	if err := at.enforceMinPositionSize(decision.PositionSizeUSD); err != nil {
 		return err
+	}
+
+	// [SMART ORDER ROUTER] Large Order Detection
+	// Threshold: 50,000 USD (simplified)
+	if decision.PositionSizeUSD > 50000 {
+		logger.Infof("  🤖 [SmartOrderRouter] Large order detected (%.2f USD). Recommendation: Split into chunks (TWAP)", decision.PositionSizeUSD)
 	}
 
 	// Calculate quantity with adjusted position size
@@ -2270,7 +2284,7 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 				}
 
 				// Record fill details
-				at.recordOrderFill(orderRecord.ID, orderID, symbol, action, actualPrice, actualQty, fee)
+				at.recordOrderFill(orderRecord.ID, orderID, symbol, action, actualPrice, actualQty, fee, price)
 				break
 			} else if statusStr == "CANCELED" || statusStr == "EXPIRED" || statusStr == "REJECTED" {
 				logger.Infof("  ⚠️ Order %s, skipping position record", statusStr)
@@ -2407,10 +2421,15 @@ func (at *AutoTrader) createOrderRecord(orderID, symbol, action, positionSide st
 }
 
 // recordOrderFill records order fill/trade details
-func (at *AutoTrader) recordOrderFill(orderRecordID int64, exchangeOrderID, symbol, action string, price, quantity, fee float64) {
+func (at *AutoTrader) recordOrderFill(orderRecordID int64, exchangeOrderID, symbol, action string, price, quantity, fee float64, arrivalPrice float64) {
 	if at.store == nil {
 		return
 	}
+
+	// Calculate TCA
+	// Assuming VWAP is close to arrival price for single fill, market impact 0 for now
+	// MarketPriceAfter is assumed to be fill price for simplicity in single fill scenario
+	tca := backtest.AnalyzeExecution(quantity, price, arrivalPrice, arrivalPrice, price)
 
 	// Determine side (BUY/SELL)
 	var side string
@@ -2443,6 +2462,9 @@ func (at *AutoTrader) recordOrderFill(orderRecordID int64, exchangeOrderID, symb
 		CommissionAsset:  "USDT",
 		RealizedPnL:      0, // Will be calculated for close orders
 		IsMaker:          false, // Market orders are usually taker
+		Slippage:         tca.Slippage,
+		MarketImpact:     tca.MarketImpact,
+		TimingCost:       tca.TimingCost,
 		CreatedAt:        time.Now().UTC().UnixMilli(),
 	}
 

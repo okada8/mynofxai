@@ -64,6 +64,13 @@ type ViewTab = 'overview' | 'chart' | 'trades' | 'decisions' | 'compare'
 const TIMEFRAME_OPTIONS = ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d']
 const POPULAR_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT']
 
+const STRESS_SCENARIOS = [
+  { id: 'black_thursday', label: 'Black Thursday (Mar 2020)', start: '2020-03-08T00:00', end: '2020-03-14T00:00' },
+  { id: 'luna_crash', label: 'LUNA Crash (May 2022)', start: '2022-05-07T00:00', end: '2022-05-14T00:00' },
+  { id: 'ftx_crash', label: 'FTX Crash (Nov 2022)', start: '2022-11-02T00:00', end: '2022-11-12T00:00' },
+  { id: 'usdc_depeg', label: 'USDC Depeg (Mar 2023)', start: '2023-03-08T00:00', end: '2023-03-13T00:00' },
+]
+
 // ============ Helper Functions ============
 const toLocalInput = (date: Date) => {
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
@@ -1333,7 +1340,27 @@ export function BacktestPage() {
                         <label className="block text-xs mb-2" style={{ color: '#848E9C' }}>
                           {tr('form.timeRangeLabel')}
                         </label>
-                        <div className="flex flex-wrap gap-1 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          {/* Stress Scenarios */}
+                          <select
+                             className="px-2 py-1 rounded text-xs bg-[#2B3139] border border-[#F6465D] text-[#F6465D] font-medium focus:outline-none"
+                             onChange={(e) => {
+                               const scenario = STRESS_SCENARIOS.find(s => s.id === e.target.value)
+                               if (scenario) {
+                                 handleFormChange('start', scenario.start)
+                                 handleFormChange('end', scenario.end)
+                               }
+                               e.target.value = '' // Reset selector
+                             }}
+                          >
+                            <option value="">⚠️ {language === 'zh' ? '压力测试场景' : 'Stress Test Scenarios'}</option>
+                            {STRESS_SCENARIOS.map(s => (
+                              <option key={s.id} value={s.id}>{s.label}</option>
+                            ))}
+                          </select>
+                          
+                          <div className="h-4 w-[1px] bg-[#2B3139] mx-1"></div>
+
                           {quickRanges.map((r) => (
                             <button
                               key={r.hours}

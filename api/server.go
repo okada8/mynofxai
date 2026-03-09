@@ -232,6 +232,10 @@ func (s *Server) setupRoutes() {
 			protected.POST("/traders/:id/close-position", s.handleClosePosition)
 			protected.PUT("/traders/:id/competition", s.handleToggleCompetition)
 			protected.GET("/traders/:id/grid-risk", s.handleGetGridRiskInfo)
+			protected.POST("/traders/:id/stress-test", s.handleStressTest) // Stress test endpoint
+
+			// System Analysis
+			protected.GET("/capital-allocation", s.handleGetCapitalAllocation) // Capital allocation endpoint
 
 			// AI model configuration
 			protected.GET("/models", s.handleGetModelConfigs)

@@ -67,6 +67,9 @@ type TraderFill struct {
 	CommissionAsset string  `gorm:"column:commission_asset;not null" json:"commission_asset"`
 	RealizedPnL     float64 `gorm:"column:realized_pnl;default:0" json:"realized_pnl"`
 	IsMaker         bool    `gorm:"column:is_maker;default:false" json:"is_maker"`
+	Slippage        float64 `gorm:"column:slippage;default:0" json:"slippage"`
+	MarketImpact    float64 `gorm:"column:market_impact;default:0" json:"market_impact"`
+	TimingCost      float64 `gorm:"column:timing_cost;default:0" json:"timing_cost"`
 	CreatedAt       int64   `gorm:"column:created_at" json:"created_at"` // Unix milliseconds UTC
 }
 
@@ -107,6 +110,11 @@ func (s *OrderStore) InitTables() error {
 				s.db.Exec(fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE BOOLEAN USING %s::int::boolean", c.table, c.col, c.col))
 				s.db.Exec(fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT false", c.table, c.col))
 			}
+
+			// Add TCA columns if not exist
+			s.db.Exec(`ALTER TABLE trader_fills ADD COLUMN IF NOT EXISTS slippage FLOAT DEFAULT 0`)
+			s.db.Exec(`ALTER TABLE trader_fills ADD COLUMN IF NOT EXISTS market_impact FLOAT DEFAULT 0`)
+			s.db.Exec(`ALTER TABLE trader_fills ADD COLUMN IF NOT EXISTS timing_cost FLOAT DEFAULT 0`)
 
 			// Migrate timestamp columns to bigint (Unix milliseconds UTC)
 			// Check if column is still timestamp type before migrating

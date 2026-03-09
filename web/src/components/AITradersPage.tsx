@@ -148,6 +148,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showModelModal, setShowModelModal] = useState(false)
   const [showExchangeModal, setShowExchangeModal] = useState(false)
+  const [showCapitalModal, setShowCapitalModal] = useState(false)
   const [editingModel, setEditingModel] = useState<string | null>(null)
   const [editingExchange, setEditingExchange] = useState<string | null>(null)
   const [editingTrader, setEditingTrader] = useState<any>(null)
@@ -830,6 +831,16 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
 
           <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
             <button
+              onClick={() => setShowCapitalModal(true)}
+              className="px-4 py-2 rounded text-xs font-mono uppercase tracking-wider transition-all border border-zinc-700 bg-black/20 text-zinc-400 hover:text-white hover:border-zinc-500 whitespace-nowrap backdrop-blur-sm"
+            >
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-3 h-3" />
+                <span>CAPITAL_ALLOCATION</span>
+              </div>
+            </button>
+
+            <button
               onClick={handleAddModel}
               className="px-4 py-2 rounded text-xs font-mono uppercase tracking-wider transition-all border border-zinc-700 bg-black/20 text-zinc-400 hover:text-white hover:border-zinc-500 whitespace-nowrap backdrop-blur-sm"
             >
@@ -1321,6 +1332,15 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           )}
         </div>
 
+        {/* Capital Allocation Modal */}
+        {showCapitalModal && (
+          <CapitalAllocationModal
+            isOpen={showCapitalModal}
+            onClose={() => setShowCapitalModal(false)}
+            language={language}
+          />
+        )}
+
         {/* Create Trader Modal */}
         {showCreateModal && (
           <TraderConfigModal
@@ -1381,6 +1401,131 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
         )}
       </div>
     </DeepVoidBackground>
+  )
+}
+
+// Capital Allocation Modal
+function CapitalAllocationModal({
+  isOpen,
+  onClose,
+  language,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  language: string
+}) {
+  const { data, isLoading } = useSWR(isOpen ? 'capital-allocation' : null, api.getCapitalAllocation)
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-[#1E2329] rounded-2xl w-full max-w-2xl border border-[#2B3139] shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-[#2B3139]">
+          <h3 className="text-xl font-bold text-[#EAECEF]">
+            {language === 'zh' ? '资金分配' : 'Capital Allocation'}
+          </h3>
+          <button onClick={onClose} className="text-[#848E9C] hover:text-[#EAECEF]">
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6">
+          {isLoading ? (
+            <div className="py-12 text-center text-[#848E9C]">Loading...</div>
+          ) : data ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
+                  <div className="text-sm text-[#848E9C] mb-1">
+                    {language === 'zh' ? '总资金' : 'Total Capital'}
+                  </div>
+                  <div className="text-2xl font-bold text-[#F0B90B]">
+                    ${data.total_capital?.toFixed(2) || '0.00'}
+                  </div>
+                </div>
+                <div className="p-4 bg-[#0B0E11] rounded-xl border border-[#2B3139]">
+                   <div className="text-sm text-[#848E9C] mb-1">
+                    {language === 'zh' ? '交易所数量' : 'Exchanges'}
+                  </div>
+                  <div className="text-2xl font-bold text-[#EAECEF]">
+                    {Object.keys(data.current_balances || {}).length}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-[#EAECEF] mb-3">
+                  {language === 'zh' ? '分配详情' : 'Allocation Details'}
+                </h4>
+                <div className="space-y-3">
+                  {Object.entries(data.target_allocation || {}).map(([exchange, targetPct]: [string, any]) => {
+                    const currentBal = data.current_balances?.[exchange] || 0
+                    const currentPct = data.total_capital > 0 ? currentBal / data.total_capital : 0
+                    const diff = currentPct - targetPct
+                    
+                    return (
+                      <div key={exchange} className="p-3 bg-[#2B3139]/30 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium text-[#EAECEF]">{exchange}</span>
+                          <span className="text-sm text-[#848E9C]">
+                            ${currentBal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="relative h-2 bg-[#0B0E11] rounded-full overflow-hidden">
+                          <div 
+                            className="absolute top-0 left-0 h-full bg-[#F0B90B]" 
+                            style={{ width: `${Math.min(currentPct * 100, 100)}%` }}
+                          />
+                          <div 
+                            className="absolute top-0 left-0 h-full w-0.5 bg-[#EAECEF] z-10" 
+                            style={{ left: `${targetPct * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs mt-1">
+                          <span className={diff > 0.05 ? 'text-[#F6465D]' : diff < -0.05 ? 'text-[#F0B90B]' : 'text-[#0ECB81]'}>
+                            {language === 'zh' ? '当前: ' : 'Current: '}{(currentPct * 100).toFixed(1)}%
+                          </span>
+                          <span className="text-[#848E9C]">
+                            {language === 'zh' ? '目标: ' : 'Target: '}{(targetPct * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              
+               {data.rebalance_plan && data.rebalance_plan.length > 0 && (
+                <div>
+                   <h4 className="text-sm font-bold text-[#EAECEF] mb-3">
+                    {language === 'zh' ? '再平衡建议' : 'Rebalance Plan'}
+                  </h4>
+                  <div className="space-y-2">
+                    {data.rebalance_plan.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-[#2B3139]/50 rounded text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#F6465D]">{item.From}</span>
+                          <span>→</span>
+                          <span className="text-[#0ECB81]">{item.To}</span>
+                        </div>
+                        <div className="font-mono font-bold text-[#EAECEF]">
+                          ${item.Amount.toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-[#F6465D]">
+              {language === 'zh' ? '获取数据失败' : 'Failed to load data'}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
