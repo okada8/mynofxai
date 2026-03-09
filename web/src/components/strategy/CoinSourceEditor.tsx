@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X, Database, TrendingUp, TrendingDown, List, Ban, Zap, Shuffle, Scan, Activity, BarChart2 } from 'lucide-react'
+import { Plus, X, Database, TrendingUp, TrendingDown, List, Ban, Zap, Shuffle, Scan, Activity, BarChart2, Globe, Layers, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import type { CoinSourceConfig } from '../../types'
 
 interface CoinSourceEditorProps {
@@ -27,6 +27,7 @@ export function CoinSourceEditor({
       oi_low: { zh: 'OI 持仓减少', en: 'OI Decrease' },
       screener: { zh: '视觉筛选器', en: 'Visual Screener' },
       mixed: { zh: '混合模式', en: 'Mixed Mode' },
+      dynamic_macro: { zh: '动态宏观', en: 'Dynamic Macro' },
       staticCoins: { zh: '自定义币种', en: 'Custom Coins' },
       addCoin: { zh: '添加币种', en: 'Add Coin' },
       useAI500: { zh: '启用 AI500 数据源', en: 'Enable AI500 Data Provider' },
@@ -39,6 +40,13 @@ export function CoinSourceEditor({
       screenerLimit: { zh: '数量上限', en: 'Limit' },
       screenerDuration: { zh: '筛选周期', en: 'Duration' },
       screenerSortBy: { zh: '排序指标', en: 'Sort By' },
+      useGainersLosers: { zh: '启用涨跌幅榜', en: 'Enable Gainers/Losers' },
+      gainersTop: { zh: '涨幅榜前N', en: 'Top Gainers' },
+      losersTop: { zh: '跌幅榜前N', en: 'Top Losers' },
+      macroScreening: { zh: '宏观筛选配置', en: 'Macro Screening Config' },
+      enableMacroFilter: { zh: '启用宏观过滤', en: 'Enable Macro Filter' },
+      maxSectorExposure: { zh: '最大板块敞口', en: 'Max Sector Exposure' },
+      sectorAllocation: { zh: '板块配置', en: 'Sector Allocation' },
       oi: { zh: '持仓变化', en: 'OI Change' },
       price: { zh: '价格变化', en: 'Price Change' },
       vol: { zh: '成交量变化', en: 'Volume Change' },
@@ -63,6 +71,10 @@ export function CoinSourceEditor({
         zh: '组合多种数据源',
         en: 'Combine multiple sources',
       },
+      dynamic_macroDesc: {
+        zh: '宏观驱动的动态币种池',
+        en: 'Macro-driven dynamic coin pool',
+      },
       mixedConfig: { zh: '组合数据源配置', en: 'Combined Sources Configuration' },
       mixedSummary: { zh: '已选组合', en: 'Selected Sources' },
       maxCoins: { zh: '最多', en: 'Up to' },
@@ -71,6 +83,7 @@ export function CoinSourceEditor({
       excludedCoins: { zh: '排除币种', en: 'Excluded Coins' },
       excludedCoinsDesc: { zh: '这些币种将从所有数据源中排除，不会被交易', en: 'These coins will be excluded from all sources and will not be traded' },
       addExcludedCoin: { zh: '添加排除', en: 'Add Excluded' },
+      onlyBinanceSymbols: { zh: '仅限币安交易对', en: 'Only Binance Symbols' },
       nofxosNote: { zh: '使用 NofxOS API Key（在指标配置中设置）', en: 'Uses NofxOS API Key (set in Indicators config)' },
     }
     return translations[key]?.[language] || key
@@ -83,6 +96,7 @@ export function CoinSourceEditor({
     { value: 'oi_low', icon: TrendingDown, color: '#F6465D' },
     { value: 'screener', icon: Scan, color: '#8B5CF6' },
     { value: 'mixed', icon: Shuffle, color: '#60a5fa' },
+    { value: 'dynamic_macro', icon: Globe, color: '#F59E0B' },
   ] as const
 
   // Calculate mixed mode summary
@@ -105,6 +119,10 @@ export function CoinSourceEditor({
     if (config.use_screener) {
       sources.push(`${language === 'zh' ? '筛选器' : 'Screener'}(${config.screener_limit || 10}/${config.screener_duration || '1h'}/${config.screener_sort_by || 'oi'})`)
       totalLimit += config.screener_limit || 10
+    }
+    if (config.use_gainers_losers) {
+      sources.push(`${language === 'zh' ? '涨跌榜' : 'G/L'}(+${config.gainers_top || 4}/-${config.losers_top || 4})`)
+      totalLimit += (config.gainers_top || 4) + (config.losers_top || 4)
     }
     if ((config.static_coins || []).length > 0) {
       sources.push(`${language === 'zh' ? '自定义' : 'Custom'}(${config.static_coins?.length || 0})`)
@@ -210,7 +228,7 @@ export function CoinSourceEditor({
         <label className="block text-sm font-medium mb-3 text-nofx-text">
           {t('sourceType')}
         </label>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
           {sourceTypes.map(({ value, icon: Icon, color }) => (
             <button
               key={value}
@@ -281,6 +299,20 @@ export function CoinSourceEditor({
           )}
         </div>
       )}
+
+      {/* Global Filter Options */}
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={config.only_binance_symbols ?? true}
+            onChange={(e) => !disabled && onChange({ ...config, only_binance_symbols: e.target.checked })}
+            disabled={disabled}
+            className="w-4 h-4 rounded accent-nofx-gold"
+          />
+          <span className="text-sm font-medium text-nofx-text">{t('onlyBinanceSymbols')}</span>
+        </label>
+      </div>
 
       {/* Excluded Coins */}
       <div>
@@ -605,15 +637,77 @@ export function CoinSourceEditor({
         </div>
       )}
 
-      {/* Mixed Mode - Unified Card Selector */}
-      {config.source_type === 'mixed' && (
-        <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
+      {/* Mixed Mode & Dynamic Macro - Unified Card Selector */}
+      {(config.source_type === 'mixed' || config.source_type === 'dynamic_macro') && (
+        <div className={`p-4 rounded-lg border ${
+          config.source_type === 'dynamic_macro'
+            ? 'bg-amber-500/5 border-amber-500/20'
+            : 'bg-blue-500/5 border-blue-500/20'
+        }`}>
           <div className="flex items-center gap-2 mb-4">
-            <Shuffle className="w-4 h-4 text-blue-400" />
+            {config.source_type === 'dynamic_macro' ? (
+              <Globe className="w-4 h-4 text-amber-500" />
+            ) : (
+              <Shuffle className="w-4 h-4 text-blue-400" />
+            )}
             <span className="text-sm font-medium text-nofx-text">
-              {t('mixedConfig')}
+              {config.source_type === 'dynamic_macro' ? t('dynamic_macro') : t('mixedConfig')}
             </span>
           </div>
+
+          {/* Macro Screening Section (Only for Dynamic Macro) */}
+          {config.source_type === 'dynamic_macro' && (
+            <div className="mb-4 p-3 rounded-lg border bg-nofx-bg border-amber-500/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-medium text-nofx-text">{t('macroScreening')}</span>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={config.macro_screening?.enable_macro_filter ?? false}
+                    onChange={(e) => !disabled && onChange({
+                      ...config,
+                      macro_screening: {
+                        ...(config.macro_screening || { max_sector_exposure: 0.4, sector_allocation: {} }),
+                        enable_macro_filter: e.target.checked
+                      }
+                    })}
+                    disabled={disabled}
+                    className="w-4 h-4 rounded accent-amber-500"
+                  />
+                  <span className="text-xs text-nofx-text-muted">{t('enableMacroFilter')}</span>
+                </label>
+              </div>
+              {config.macro_screening?.enable_macro_filter && (
+                <div className="flex items-center gap-3 pl-6">
+                  <span className="text-xs text-nofx-text-muted">{t('maxSectorExposure')}:</span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      step="0.05"
+                      min="0.1"
+                      max="1.0"
+                      value={config.macro_screening?.max_sector_exposure || 0.4}
+                      onChange={(e) => !disabled && onChange({
+                        ...config,
+                        macro_screening: {
+                          ...config.macro_screening!,
+                          max_sector_exposure: parseFloat(e.target.value)
+                        }
+                      })}
+                      disabled={disabled}
+                      className="w-16 px-2 py-1 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                    />
+                    <span className="text-xs text-nofx-text-muted">
+                      ({Math.round((config.macro_screening?.max_sector_exposure || 0.4) * 100)}%)
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             {/* AI500 Card */}
@@ -749,6 +843,77 @@ export function CoinSourceEditor({
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>
+                </div>
+              )}
+            </div>
+
+            {/* Gainers/Losers Card */}
+            <div
+              className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                config.use_gainers_losers
+                  ? 'bg-emerald-500/10 border-emerald-500/50'
+                  : 'bg-nofx-bg border-nofx-border hover:border-emerald-500/30'
+              }`}
+              onClick={() => !disabled && onChange({ ...config, use_gainers_losers: !config.use_gainers_losers })}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={config.use_gainers_losers}
+                  onChange={(e) => !disabled && onChange({ ...config, use_gainers_losers: e.target.checked })}
+                  disabled={disabled}
+                  className="w-4 h-4 rounded accent-emerald-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <Activity className="w-4 h-4 text-emerald-500" />
+                <span className="text-sm font-medium text-nofx-text">
+                  {t('useGainersLosers')}
+                </span>
+              </div>
+              {config.use_gainers_losers && (
+                <div className="flex items-center gap-2 mt-2 pl-6">
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <ArrowUpRight className="w-3 h-3 text-nofx-success" />
+                        <span className="text-xs text-nofx-text-muted">{t('gainersTop')}:</span>
+                      </div>
+                      <select
+                        value={config.gainers_top || 4}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          !disabled && onChange({ ...config, gainers_top: parseInt(e.target.value) || 4 })
+                        }}
+                        disabled={disabled}
+                        className="px-2 py-0.5 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {[2, 4, 6, 8, 10].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <ArrowDownRight className="w-3 h-3 text-nofx-danger" />
+                        <span className="text-xs text-nofx-text-muted">{t('losersTop')}:</span>
+                      </div>
+                      <select
+                        value={config.losers_top || 4}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          !disabled && onChange({ ...config, losers_top: parseInt(e.target.value) || 4 })
+                        }}
+                        disabled={disabled}
+                        className="px-2 py-0.5 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {[2, 4, 6, 8, 10].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
