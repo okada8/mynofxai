@@ -55,6 +55,8 @@ export function RiskControlEditor({
       maxDrawdownDesc: { zh: '账户净值回撤达到此比例时停止交易', en: 'Stop trading when account drawdown reaches this %' },
       dailyLoss: { zh: '每日亏损限额', en: 'Daily Loss Limit' },
       dailyLossDesc: { zh: '单日亏损达到此比例时停止交易', en: 'Stop trading when daily loss reaches this %' },
+      varLimit: { zh: 'VaR 风险值限制', en: 'Value at Risk (VaR) Limit' },
+      varLimitDesc: { zh: '投资组合风险值达到此比例时报警（95%置信度）', en: 'Alert when portfolio VaR reaches this % (95% confidence)' },
       volatilityAdj: { zh: '波动率杠杆调整', en: 'Volatility Leverage Adj' },
       volatilityAdjDesc: { zh: '基于市场波动率自动降低杠杆', en: 'Auto-reduce leverage based on market volatility' },
       liquidationDist: { zh: '强平距离保护', en: 'Min Liquidation Distance' },
@@ -85,6 +87,7 @@ export function RiskControlEditor({
   const safeEnhancedConfig = enhancedConfig || {
     max_drawdown_pct: 20,
     daily_loss_limit_pct: 5,
+    var_limit_pct: 5,
     max_leverage_volatility_adj: true,
     min_distance_to_liquidation: 5,
     risk_level: 'medium',
@@ -490,6 +493,36 @@ export function RiskControlEditor({
                 />
                 <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
                   {safeEnhancedConfig.daily_loss_limit_pct}%
+                </span>
+              </div>
+            </div>
+
+            {/* VaR Limit */}
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+            >
+              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+                {t('varLimit')}
+              </label>
+              <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
+                {t('varLimitDesc')}
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  value={safeEnhancedConfig.var_limit_pct ?? 5}
+                  onChange={(e) =>
+                    updateEnhancedField('var_limit_pct', parseInt(e.target.value))
+                  }
+                  disabled={disabled}
+                  min={1}
+                  max={10}
+                  step={0.5}
+                  className="flex-1 accent-orange-500"
+                />
+                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                  {safeEnhancedConfig.var_limit_pct ?? 5}%
                 </span>
               </div>
             </div>

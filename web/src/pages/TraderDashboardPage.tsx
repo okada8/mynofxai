@@ -11,6 +11,7 @@ import { t, type Language } from '../i18n/translations'
 import { LogOut, Loader2, Eye, EyeOff, Copy, Check } from 'lucide-react'
 import { DeepVoidBackground } from '../components/DeepVoidBackground'
 import { GridRiskPanel } from '../components/strategy/GridRiskPanel'
+import { RiskMonitorPanel } from '../components/dashboard/RiskMonitorPanel'
 import type {
     SystemStatus,
     AccountInfo,
@@ -548,6 +549,17 @@ export function TraderDashboardPage({
                             traderId={selectedTraderId}
                             language={language}
                             refreshInterval={5000}
+                        />
+                    </div>
+                )}
+
+                {/* AI Risk Monitor Panel - Show if risk_state is present */}
+                {(status?.strategy_type !== 'grid_trading') && account?.risk_state && (
+                    <div className="mb-8 animate-slide-in" style={{ animationDelay: '0.05s' }}>
+                        <RiskMonitorPanel
+                            riskState={account.risk_state}
+                            totalEquity={account.total_equity}
+                            language={language}
                         />
                     </div>
                 )}

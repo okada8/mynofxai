@@ -22,6 +22,7 @@ import (
 var (
 	errBacktestCompleted = errors.New("backtest completed")
 	errLiquidated        = errors.New("account liquidated")
+	errCircuitBreaker    = errors.New("circuit breaker open")
 )
 
 const (
@@ -35,6 +36,14 @@ type Runner struct {
 	feed           *DataFeed
 	account        *BacktestAccount
 	strategyEngine *kernel.StrategyEngine
+
+	// Advanced Modules
+	posManager       *DynamicPositionManager
+	riskMonitor      *RiskMonitor
+	alertManager     *AlertManager
+	circuitBreaker   *CircuitBreaker
+	leverageAdjuster *DynamicLeverageAdjuster
+	orderSplitter    *OrderSplitter
 
 	decisionLogDir string
 	mcpClient      mcp.AIClient
@@ -121,22 +130,41 @@ func NewRunner(cfg BacktestConfig, mcpClient mcp.AIClient) (*Runner, error) {
 	strategyConfig := cfg.ToStrategyConfig()
 	strategyEngine := kernel.NewStrategyEngine(strategyConfig)
 
+	// Initialize advanced modules
+	posManager := NewDynamicPositionManager(cfg.InitialBalance, 0.01, 0.05, true)
+	riskMonitor := NewRiskMonitor(0.95, 1) // 95% confidence, 1 day horizon
+	alertManager := NewAlertManager()
+	circuitBreaker := NewCircuitBreaker("BacktestBreaker", 3, 15*time.Minute)
+	leverageAdjuster := NewDynamicLeverageAdjuster(10) // Base max leverage 10x
+	orderSplitter := &OrderSplitter{
+		TotalSize:  0, // Set per order
+		MinChunk:   5000,
+		MaxChunk:   50000,
+		TimeWindow: 60, // 1 minute execution window
+	}
+
 	r := &Runner{
-		cfg:            cfg,
-		feed:           feed,
-		account:        account,
-		strategyEngine: strategyEngine,
-		decisionLogDir: dLogDir,
-		mcpClient:      client,
-		status:         RunStateCreated,
-		state:          state,
-		pauseCh:        make(chan struct{}, 1),
-		resumeCh:       make(chan struct{}, 1),
-		stopCh:         make(chan struct{}, 1),
-		doneCh:         make(chan struct{}),
-		createdAt:      createdAt,
-		aiCache:        aiCache,
-		cachePath:      cachePath,
+		cfg:              cfg,
+		feed:             feed,
+		account:          account,
+		strategyEngine:   strategyEngine,
+		decisionLogDir:   dLogDir,
+		mcpClient:        client,
+		status:           RunStateCreated,
+		state:            state,
+		pauseCh:          make(chan struct{}, 1),
+		resumeCh:         make(chan struct{}, 1),
+		stopCh:           make(chan struct{}, 1),
+		doneCh:           make(chan struct{}),
+		createdAt:        createdAt,
+		aiCache:          aiCache,
+		cachePath:        cachePath,
+		posManager:       posManager,
+		riskMonitor:      riskMonitor,
+		alertManager:     alertManager,
+		circuitBreaker:   circuitBreaker,
+		leverageAdjuster: leverageAdjuster,
+		orderSplitter:    orderSplitter,
 	}
 
 	if err := r.initLock(); err != nil {
@@ -268,6 +296,8 @@ func (r *Runner) loop(ctx context.Context) {
 
 func (r *Runner) stepOnce() error {
 	state := r.snapshotState()
+	prevEquity := state.Equity
+
 	if state.BarIndex >= r.feed.DecisionBarCount() {
 		return errBacktestCompleted
 	}
@@ -284,8 +314,28 @@ func (r *Runner) stepOnce() error {
 		priceMap[symbol] = data.CurrentPrice
 	}
 
+	// Update Risk Monitor
+	currentPositions := make([]PositionSnapshot, 0, len(state.Positions))
+	for _, p := range state.Positions {
+		currentPositions = append(currentPositions, p)
+	}
+	r.riskMonitor.UpdatePositions(currentPositions)
+	riskLevel, varVal := r.riskMonitor.CheckRiskLevel()
+
+	tradingPaused := false
+	if riskLevel == RiskLevelRed {
+		tradingPaused = true
+		r.alertManager.AddAlert(LevelCritical, "High Risk", "Portfolio VaR critical", "VaR", varVal, 0.02, ActionPauseTrading)
+	} else if riskLevel == RiskLevelYellow {
+		r.alertManager.AddAlert(LevelWarning, "Elevated Risk", "Portfolio VaR elevated", "VaR", varVal, 0.01, ActionReduceRisk)
+	}
+
+	if !r.circuitBreaker.AllowRequest() {
+		tradingPaused = true
+	}
+
 	callCount := state.DecisionCycle + 1
-	shouldDecide := r.shouldTriggerDecision(state.BarIndex)
+	shouldDecide := r.shouldTriggerDecision(state.BarIndex) && !tradingPaused
 
 	var (
 		record          *store.DecisionRecord
@@ -336,6 +386,7 @@ func (r *Runner) stepOnce() error {
 		if !fromCache {
 			fd, err := r.invokeAIWithRetry(ctx)
 			if err != nil {
+				r.circuitBreaker.ReportAPIFailure()
 				decisionAttempted = true
 				hadError = true
 				record.Success = false
@@ -343,6 +394,7 @@ func (r *Runner) stepOnce() error {
 				execLog = append(execLog, fmt.Sprintf("⚠️ AI decision failed: %v", err))
 				r.setLastError(err)
 			} else {
+				r.circuitBreaker.ReportSuccess()
 				fullDecision = fd
 				if r.cfg.CacheAI && r.aiCache != nil && cacheKey != "" {
 					if err := r.aiCache.Put(cacheKey, r.cfg.PromptVariant, ts, fullDecision); err != nil {
@@ -365,7 +417,7 @@ func (r *Runner) stepOnce() error {
 			}
 
 			for _, dec := range sorted {
-				actionRecord, trades, logEntry, execErr := r.executeDecision(dec, priceMap, ts, callCount)
+				actionRecord, trades, logEntry, execErr := r.executeDecision(dec, marketData, priceMap, ts, callCount)
 				if execErr != nil {
 					actionRecord.Success = false
 					actionRecord.Error = execErr.Error()
@@ -401,6 +453,7 @@ func (r *Runner) stepOnce() error {
 		return err
 	}
 	if len(liquidationEvents) > 0 {
+		r.circuitBreaker.ReportFailure()
 		hadError = true
 		tradeEvents = append(tradeEvents, liquidationEvents...)
 		if record != nil {
@@ -421,6 +474,12 @@ func (r *Runner) stepOnce() error {
 	marginUsed := r.totalMarginUsed()
 
 	r.updateState(ts, equity, unrealized, marginUsed, priceMap, decisionAttempted)
+
+	// Update Risk Monitor History
+	if prevEquity > 0 {
+		ret := (equity - prevEquity) / prevEquity
+		r.riskMonitor.AddReturn(ret)
+	}
 
 	snapshot := r.snapshotState()
 	drawdownPct := 0.0
@@ -621,13 +680,41 @@ func (r *Runner) invokeAIWithRetry(ctx *kernel.Context) (*kernel.FullDecision, e
 	return nil, lastErr
 }
 
-func (r *Runner) executeDecision(dec kernel.Decision, priceMap map[string]float64, ts int64, cycle int) (store.DecisionAction, []TradeEvent, string, error) {
+func (r *Runner) executeDecision(dec kernel.Decision, marketData map[string]*market.Data, priceMap map[string]float64, ts int64, cycle int) (store.DecisionAction, []TradeEvent, string, error) {
 	symbol := dec.Symbol
 	if symbol == "" {
 		return store.DecisionAction{}, nil, "", fmt.Errorf("empty symbol in decision")
 	}
 
-	usedLeverage := r.resolveLeverage(dec.Leverage, symbol)
+	var volume, volatility float64
+	if md, ok := marketData[symbol]; ok {
+		if md.LongerTermContext != nil {
+			volume = md.LongerTermContext.AverageVolume * 24 // Assume avg hourly volume * 24
+			if md.LongerTermContext.ATR14 > 0 && md.CurrentPrice > 0 {
+				volatility = md.LongerTermContext.ATR14 / md.CurrentPrice
+			}
+		} else if md.IntradaySeries != nil && len(md.IntradaySeries.Volume) > 0 {
+			// Fallback to last volume * 288
+			volume = 100_000_000 // Assume sufficient liquidity if unknown
+			if md.IntradaySeries.ATR14 > 0 && md.CurrentPrice > 0 {
+				volatility = md.IntradaySeries.ATR14 / md.CurrentPrice
+			}
+		}
+	}
+	if volume == 0 {
+		volume = 100_000_000 // Default to high liquidity if unknown
+	}
+	if volatility == 0 {
+		volatility = 0.05 // Default 5%
+	}
+
+	// Use Dynamic Leverage
+	drawdown := 0.0
+	if r.state.MaxEquity > 0 {
+		drawdown = (r.state.MaxEquity - r.state.Equity) / r.state.MaxEquity
+	}
+	usedLeverage := r.resolveLeverage(dec.Leverage, symbol, volatility, drawdown)
+
 	actionRecord := store.DecisionAction{
 		Action:    dec.Action,
 		Symbol:    symbol,
@@ -647,7 +734,7 @@ func (r *Runner) executeDecision(dec kernel.Decision, priceMap map[string]float6
 
 	switch dec.Action {
 	case "open_long":
-		qty := r.determineQuantity(dec, basePrice)
+		qty := r.calculatePositionSize(dec, basePrice, volume, volatility, drawdown)
 		if qty <= 0 {
 			return actionRecord, nil, "", fmt.Errorf("invalid qty")
 		}
@@ -655,6 +742,13 @@ func (r *Runner) executeDecision(dec kernel.Decision, priceMap map[string]float6
 		if err != nil {
 			return actionRecord, nil, "", err
 		}
+		// Log split chunks if size is large
+		r.orderSplitter.TotalSize = qty * execPrice
+		if r.orderSplitter.TotalSize > r.orderSplitter.MaxChunk {
+			chunks := r.orderSplitter.SplitOrder()
+			logger.Infof("🔪 Order Splitter: Split large LONG order of %.2f into %d chunks", r.orderSplitter.TotalSize, len(chunks))
+		}
+
 		actionRecord.Quantity = qty
 		actionRecord.Price = execPrice
 		actionRecord.Leverage = pos.Leverage
@@ -676,7 +770,7 @@ func (r *Runner) executeDecision(dec kernel.Decision, priceMap map[string]float6
 		return actionRecord, []TradeEvent{trade}, "", nil
 
 	case "open_short":
-		qty := r.determineQuantity(dec, basePrice)
+		qty := r.calculatePositionSize(dec, basePrice, volume, volatility, drawdown)
 		if qty <= 0 {
 			return actionRecord, nil, "", fmt.Errorf("invalid qty")
 		}
@@ -684,6 +778,13 @@ func (r *Runner) executeDecision(dec kernel.Decision, priceMap map[string]float6
 		if err != nil {
 			return actionRecord, nil, "", err
 		}
+		// Log split chunks if size is large
+		r.orderSplitter.TotalSize = qty * execPrice
+		if r.orderSplitter.TotalSize > r.orderSplitter.MaxChunk {
+			chunks := r.orderSplitter.SplitOrder()
+			logger.Infof("🔪 Order Splitter: Split large SHORT order of %.2f into %d chunks", r.orderSplitter.TotalSize, len(chunks))
+		}
+
 		actionRecord.Quantity = qty
 		actionRecord.Price = execPrice
 		actionRecord.Leverage = pos.Leverage
@@ -774,15 +875,18 @@ func (r *Runner) executeDecision(dec kernel.Decision, priceMap map[string]float6
 // MinPositionSizeUSD is the minimum position size in USD to avoid dust positions
 const MinPositionSizeUSD = 10.0
 
-func (r *Runner) determineQuantity(dec kernel.Decision, price float64) float64 {
+func (r *Runner) calculatePositionSize(dec kernel.Decision, price float64, volume, volatility, drawdown float64) float64 {
 	snapshot := r.snapshotState()
 	equity := snapshot.Equity
 	if equity <= 0 {
 		equity = r.account.InitialBalance()
 	}
 
+	// Use Dynamic Position Manager
+	sizeUSD := r.posManager.CalculatePositionSize(dec.Symbol, volume, volatility, float64(dec.Confidence)/100.0)
+
 	// Get leverage for this symbol
-	leverage := r.resolveLeverage(dec.Leverage, dec.Symbol)
+	leverage := r.resolveLeverage(dec.Leverage, dec.Symbol, volatility, drawdown)
 	if leverage <= 0 {
 		leverage = 5
 	}
@@ -791,12 +895,6 @@ func (r *Runner) determineQuantity(dec kernel.Decision, price float64) float64 {
 	availableCash := r.account.Cash()
 	maxMarginToUse := availableCash * 0.9 // Use max 90% of available cash
 	maxPositionValue := maxMarginToUse * float64(leverage)
-
-	sizeUSD := dec.PositionSizeUSD
-	if sizeUSD <= 0 {
-		// Default to 5% of equity, but cap to available margin
-		sizeUSD = 0.05 * equity
-	}
 
 	// Cap position size to what we can actually afford
 	if sizeUSD > maxPositionValue {
@@ -828,7 +926,7 @@ func (r *Runner) determineCloseQuantity(symbol, side string, dec kernel.Decision
 	return 0
 }
 
-func (r *Runner) resolveLeverage(requested int, symbol string) int {
+func (r *Runner) resolveLeverage(requested int, symbol string, volatility, drawdown float64) int {
 	sym := strings.ToUpper(symbol)
 	isBTCETH := sym == "BTCUSDT" || sym == "ETHUSDT"
 
@@ -851,6 +949,9 @@ func (r *Runner) resolveLeverage(requested int, symbol string) int {
 	if leverage <= 0 {
 		leverage = maxLeverage
 	}
+
+	// Dynamic Leverage Adjustment
+	leverage = r.leverageAdjuster.AdjustLeverage(volatility, drawdown, leverage)
 
 	// Enforce max leverage limit
 	if leverage > maxLeverage {

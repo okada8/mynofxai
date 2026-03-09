@@ -131,6 +131,18 @@ type Context struct {
 	BTCETHLeverage     int                          `json:"-"`
 	AltcoinLeverage int                                `json:"-"`
 	Timeframes      []string                           `json:"-"`
+	RiskState       *RiskState                         `json:"risk_state,omitempty"` // Real-time risk status (VaR, Risk Level)
+}
+
+// RiskState represents the current risk status of the portfolio
+type RiskState struct {
+	Level       string  `json:"level"`        // "Safe", "Caution", "Danger"
+	VaR         float64 `json:"var"`          // Value at Risk (USD)
+	VaRPct      float64 `json:"var_pct"`      // Value at Risk (%)
+	MaxDrawdown float64 `json:"max_drawdown"` // Current Max Drawdown (%)
+	Utilization float64 `json:"utilization"`  // Margin Utilization (%)
+	Exposure    float64 `json:"exposure"`     // Total Exposure (USD)
+	Message     string  `json:"message"`      // Risk warning message
 }
 
 // Decision AI trading decision
@@ -1385,6 +1397,19 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 		ctx.Account.TotalPnLPct,
 		ctx.Account.MarginUsedPct,
 		ctx.Account.PositionCount))
+
+	// Risk Monitor Status
+	if ctx.RiskState != nil {
+		sb.WriteString("## 🛡️ Risk Monitor Status\n")
+		sb.WriteString(fmt.Sprintf("Risk Level: %s | VaR (95%%): %.2f USD (%.2f%%)\n",
+			ctx.RiskState.Level, ctx.RiskState.VaR, ctx.RiskState.VaRPct))
+		sb.WriteString(fmt.Sprintf("Max Drawdown: %.2f%% | Exposure: %.2f USD | Utilization: %.2f%%\n",
+			ctx.RiskState.MaxDrawdown, ctx.RiskState.Exposure, ctx.RiskState.Utilization))
+		if ctx.RiskState.Message != "" {
+			sb.WriteString(fmt.Sprintf("⚠️ WARNING: %s\n", ctx.RiskState.Message))
+		}
+		sb.WriteString("\n")
+	}
 
 	// Recently completed orders (placed before positions to ensure visibility)
 	if len(ctx.RecentOrders) > 0 {

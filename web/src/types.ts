@@ -27,6 +27,17 @@ export interface AccountInfo {
   position_count: number
   margin_used: number
   margin_used_pct: number
+  risk_state?: RiskState
+}
+
+export interface RiskState {
+  level: string
+  var: number
+  var_pct: number
+  max_drawdown: number
+  utilization: number
+  exposure: number
+  message: string
 }
 
 export interface Position {
@@ -623,6 +634,7 @@ export interface RiskControlConfig {
 export interface RiskControlEnhanced {
   max_drawdown_pct: number;        // Max account drawdown percentage
   daily_loss_limit_pct: number;    // Daily loss limit percentage
+  var_limit_pct?: number;          // Value at Risk limit percentage (e.g. 5%)
   max_leverage_volatility_adj: boolean; // Auto-adjust leverage based on volatility
   min_distance_to_liquidation: number; // Minimum distance to liquidation price (%)
   risk_level: 'low' | 'medium' | 'high' | 'custom';

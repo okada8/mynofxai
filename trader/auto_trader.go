@@ -21,6 +21,7 @@ import (
 	"nofx/trader/kucoin"
 	"nofx/trader/lighter"
 	"nofx/trader/okx"
+	"nofx/trader/risk"
 	"strings"
 	"sync"
 	"time"
@@ -151,6 +152,10 @@ type AutoTrader struct {
 	lastBalanceSyncTime   time.Time          // Last balance sync time
 	userID                string             // User ID
 	gridState             *GridState         // Grid trading state (only used when StrategyType == "grid_trading")
+	posManager            *risk.DynamicPositionManager // Dynamic position manager
+	riskMonitor           *risk.RiskMonitor  // Real-time risk monitor
+	lastRiskState         *kernel.RiskState  // Last calculated risk state
+	riskStateMutex        sync.RWMutex       // Mutex for risk state
 }
 
 // NewAutoTrader creates an automatic trader
@@ -350,6 +355,34 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	strategyEngine := kernel.NewStrategyEngine(config.StrategyConfig)
 	logger.Infof("✓ [%s] Using strategy engine (strategy configuration loaded)", config.Name)
 
+	// Initialize Dynamic Position Manager
+	riskControl := config.StrategyConfig.RiskControl
+	riskPerTrade := riskControl.MaxRiskPerTradePct / 100.0
+	if riskPerTrade <= 0 {
+		riskPerTrade = 0.01 // Default 1%
+	}
+
+	// Default max position percentage (of equity)
+	maxPosPct := riskControl.EquityPct / 100.0
+	if maxPosPct <= 0 {
+		maxPosPct = 0.10 // Default 10%
+	}
+
+	posManager := risk.NewDynamicPositionManager(config.InitialBalance, riskPerTrade, maxPosPct, true)
+
+	// Initialize Risk Monitor
+	maxDrawdown := 20.0  // Default 20%
+	varLimit := 5.0      // Default 5% VaR (95% confidence)
+	maxExposure := 300.0 // Default 3x max leverage exposure
+
+	if config.StrategyConfig.RiskControlEnhanced != nil {
+		if config.StrategyConfig.RiskControlEnhanced.StrategyDrawdownLimitPct > 0 {
+			maxDrawdown = config.StrategyConfig.RiskControlEnhanced.StrategyDrawdownLimitPct
+		}
+	}
+
+	riskMonitor := risk.NewRiskMonitor(maxDrawdown, varLimit, maxExposure)
+
 	return &AutoTrader{
 		id:                    config.ID,
 		name:                  config.Name,
@@ -375,6 +408,8 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		peakPnLCacheMutex:     sync.RWMutex{},
 		lastBalanceSyncTime:   time.Now(),
 		userID:                userID,
+		posManager:            posManager,
+		riskMonitor:           riskMonitor,
 	}, nil
 }
 
@@ -605,6 +640,11 @@ func (at *AutoTrader) runCycle() error {
 		record.ErrorMessage = fmt.Sprintf("Failed to build trading context: %v", err)
 		at.saveDecision(record)
 		return fmt.Errorf("failed to build trading context: %w", err)
+	}
+
+	// Update position manager capital with latest equity
+	if at.posManager != nil {
+		at.posManager.UpdateCapital(ctx.Account.TotalEquity)
 	}
 
 	// Save equity snapshot independently (decoupled from AI decision, used for drawing profit curve)
@@ -1067,6 +1107,19 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 		}
 	}
 
+	// 12. Analyze risk state
+	if at.riskMonitor != nil {
+		logger.Infof("🛡️ [%s] Analyzing portfolio risk...", at.name)
+		ctx.RiskState = at.riskMonitor.Analyze(&ctx.Account, ctx.Positions, ctx.MarketDataMap)
+		
+		// Update last risk state
+		at.riskStateMutex.Lock()
+		at.lastRiskState = ctx.RiskState
+		at.riskStateMutex.Unlock()
+		
+		logger.Infof("🛡️ [%s] Risk Level: %s (VaR: %.2f%%)", at.name, ctx.RiskState.Level, ctx.RiskState.VaRPct)
+	}
+
 	return ctx, nil
 }
 
@@ -1162,6 +1215,39 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 		equity = eq
 	} else {
 		equity = availableBalance // Fallback to available balance
+	}
+
+	// Dynamic Position Sizing
+	if at.posManager != nil {
+		var volume, volatility float64
+		// Try to get volume and volatility from market data
+		if marketData.LongerTermContext != nil {
+			volume = marketData.LongerTermContext.AverageVolume * 24
+			if marketData.LongerTermContext.ATR14 > 0 && marketData.CurrentPrice > 0 {
+				volatility = marketData.LongerTermContext.ATR14 / marketData.CurrentPrice
+			}
+		}
+		// Fallback if needed
+		if volatility == 0 && marketData.IntradaySeries != nil && marketData.IntradaySeries.ATR14 > 0 {
+			volatility = marketData.IntradaySeries.ATR14 / marketData.CurrentPrice
+		}
+		if volume == 0 {
+			volume = 100_000_000
+		} // Default high
+		if volatility == 0 {
+			volatility = 0.05
+		} // Default 5%
+
+		calculatedSize := at.posManager.CalculatePositionSize(decision.Symbol, volume, volatility, float64(decision.Confidence)/100.0)
+
+		logger.Infof("  📊 Dynamic Position Sizing: AI=%.2f, Manager=%.2f (Vol: %.1f%%, Conf: %d%%)",
+			decision.PositionSizeUSD, calculatedSize, volatility*100, decision.Confidence)
+
+		// If AI provided size is 0 or excessive, use manager's calculation
+		// Also respect AI's decision if it's smaller (conservative)
+		if decision.PositionSizeUSD <= 0 || decision.PositionSizeUSD > calculatedSize {
+			decision.PositionSizeUSD = calculatedSize
+		}
 	}
 
 	// [CODE ENFORCED] Position Value Ratio Check: position_value <= equity × ratio
@@ -1279,6 +1365,39 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 		equity = eq
 	} else {
 		equity = availableBalance // Fallback to available balance
+	}
+
+	// Dynamic Position Sizing
+	if at.posManager != nil {
+		var volume, volatility float64
+		// Try to get volume and volatility from market data
+		if marketData.LongerTermContext != nil {
+			volume = marketData.LongerTermContext.AverageVolume * 24
+			if marketData.LongerTermContext.ATR14 > 0 && marketData.CurrentPrice > 0 {
+				volatility = marketData.LongerTermContext.ATR14 / marketData.CurrentPrice
+			}
+		}
+		// Fallback if needed
+		if volatility == 0 && marketData.IntradaySeries != nil && marketData.IntradaySeries.ATR14 > 0 {
+			volatility = marketData.IntradaySeries.ATR14 / marketData.CurrentPrice
+		}
+		if volume == 0 {
+			volume = 100_000_000
+		} // Default high
+		if volatility == 0 {
+			volatility = 0.05
+		} // Default 5%
+
+		calculatedSize := at.posManager.CalculatePositionSize(decision.Symbol, volume, volatility, float64(decision.Confidence)/100.0)
+
+		logger.Infof("  📊 Dynamic Position Sizing: AI=%.2f, Manager=%.2f (Vol: %.1f%%, Conf: %d%%)",
+			decision.PositionSizeUSD, calculatedSize, volatility*100, decision.Confidence)
+
+		// If AI provided size is 0 or excessive, use manager's calculation
+		// Also respect AI's decision if it's smaller (conservative)
+		if decision.PositionSizeUSD <= 0 || decision.PositionSizeUSD > calculatedSize {
+			decision.PositionSizeUSD = calculatedSize
+		}
 	}
 
 	// [CODE ENFORCED] Position Value Ratio Check: position_value <= equity × ratio
@@ -1699,7 +1818,7 @@ func (at *AutoTrader) GetAccountInfo() (map[string]interface{}, error) {
 		marginUsedPct = (totalMarginUsed / totalEquity) * 100
 	}
 
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		// Core fields
 		"total_equity":      totalEquity,           // Account equity = wallet + unrealized
 		"wallet_balance":    totalWalletBalance,    // Wallet balance (excluding unrealized P&L)
@@ -1716,7 +1835,16 @@ func (at *AutoTrader) GetAccountInfo() (map[string]interface{}, error) {
 		"position_count":  len(positions),  // Position count
 		"margin_used":     totalMarginUsed, // Margin used
 		"margin_used_pct": marginUsedPct,   // Margin usage rate
-	}, nil
+	}
+
+	// Add Risk State
+	at.riskStateMutex.RLock()
+	if at.lastRiskState != nil {
+		result["risk_state"] = at.lastRiskState
+	}
+	at.riskStateMutex.RUnlock()
+
+	return result, nil
 }
 
 // GetPositions gets position list (for API)
