@@ -21,8 +21,8 @@ type AIConfig struct {
 }
 
 type LeverageConfig struct {
-	BTCETHLeverage  int `json:"btc_eth_leverage"`
-	AltcoinLeverage int `json:"altcoin_leverage"`
+	BTCETHLeverage  float64 `json:"btc_eth_leverage"`
+	AltcoinLeverage float64 `json:"altcoin_leverage"`
 }
 
 // BacktestConfig describes the input configuration for a backtest run.

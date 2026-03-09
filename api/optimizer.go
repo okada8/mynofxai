@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"nofx/backtest"
+	"nofx/logger"
 	"nofx/optimizer"
 	"nofx/store"
 )
@@ -26,6 +27,7 @@ type StartOptimizationRequest struct {
 func (s *Server) handleRunOptimization(c *gin.Context) {
 	var req StartOptimizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warnf("[Optimization] JSON unmarshal error: %v", err)
 		SafeBadRequest(c, err.Error())
 		return
 	}
@@ -38,17 +40,20 @@ func (s *Server) handleRunOptimization(c *gin.Context) {
 		// Fetch from DB
 		var strategy store.Strategy
 		if err := s.store.GormDB().First(&strategy, "id = ?", req.StrategyID).Error; err != nil {
+			logger.Warnf("[Optimization] Strategy not found: %v", err)
 			SafeBadRequest(c, "Strategy not found: "+err.Error())
 			return
 		}
 		// Parse config string to struct
 		config, err := strategy.ParseConfig()
 		if err != nil {
+			logger.Warnf("[Optimization] Failed to parse strategy config: %v", err)
 			SafeBadRequest(c, "Failed to parse strategy config: "+err.Error())
 			return
 		}
 		strategyConfig = *config
 	} else {
+		logger.Warn("[Optimization] Either strategy_id or strategy_config must be provided")
 		SafeBadRequest(c, "Either strategy_id or strategy_config must be provided")
 		return
 	}
@@ -58,6 +63,7 @@ func (s *Server) handleRunOptimization(c *gin.Context) {
 		// Auto-generate based on strategy type
 		req.ParameterRanges = generateDefaultParameterRanges(strategyConfig)
 		if len(req.ParameterRanges) == 0 {
+			logger.Warn("[Optimization] No parameters selected for optimization and auto-generation failed")
 			SafeBadRequest(c, "No parameters selected for optimization and auto-generation failed")
 			return
 		}
@@ -89,6 +95,7 @@ func (s *Server) handleRunOptimization(c *gin.Context) {
 	// Range validation
 	if req.GAConfig.PopulationSize > 0 {
 		if req.GAConfig.PopulationSize < 10 || req.GAConfig.PopulationSize > 1000 {
+			logger.Warnf("[Optimization] Invalid population size: %d", req.GAConfig.PopulationSize)
 			SafeBadRequest(c, "Population size must be between 10 and 1000")
 			return
 		}
@@ -96,6 +103,7 @@ func (s *Server) handleRunOptimization(c *gin.Context) {
 	}
 	if req.GAConfig.Generations > 0 {
 		if req.GAConfig.Generations < 1 || req.GAConfig.Generations > 500 {
+			logger.Warnf("[Optimization] Invalid generations: %d", req.GAConfig.Generations)
 			SafeBadRequest(c, "Generations must be between 1 and 500")
 			return
 		}
@@ -103,6 +111,7 @@ func (s *Server) handleRunOptimization(c *gin.Context) {
 	}
 	if req.GAConfig.MutationRate > 0 {
 		if req.GAConfig.MutationRate < 0.01 || req.GAConfig.MutationRate > 0.5 {
+			logger.Warnf("[Optimization] Invalid mutation rate: %f", req.GAConfig.MutationRate)
 			SafeBadRequest(c, "Mutation rate must be between 0.01 and 0.5")
 			return
 		}

@@ -485,6 +485,7 @@ export interface StrategyConfig {
   custom_prompt?: string;
   risk_control: RiskControlConfig;
   risk_control_enhanced?: RiskControlEnhanced; // New in nofx 2.0
+  macro_config?: MacroConfig;                  // New in nofx 3.0
   alpha_factors?: AlphaFactorConfig;           // New in nofx 2.0
   multi_agent?: MultiAgentConfig;              // New in nofx 2.0
   prompt_sections?: PromptSectionsConfig;
@@ -638,6 +639,14 @@ export interface RiskControlEnhanced {
   max_leverage_volatility_adj: boolean; // Auto-adjust leverage based on volatility
   min_distance_to_liquidation: number; // Minimum distance to liquidation price (%)
   risk_level: 'low' | 'medium' | 'high' | 'custom';
+}
+
+// Macro Configuration (nofx 3.0)
+export interface MacroConfig {
+  current_regime: string;
+  assumed_conditions: Record<string, string>;
+  regime_detection_frequency: string;
+  data_sources: string[];
 }
 
 // Alpha Factors Configuration (nofx 2.0)
@@ -921,4 +930,69 @@ export interface SystemStats {
     status: string
     created: number
   }[]
+}
+
+// Optimization Types
+export interface GeneDef {
+  name: string
+  path: string
+  type: 0 | 1 // 0 for int, 1 for float
+  min: number
+  max: number
+  step: number
+  enabled?: boolean
+}
+
+export interface GAConfig {
+  population_size: number
+  generations: number
+  mutation_rate: number
+  elite_size: number
+  tournament_size: number
+  target_metric?: string
+  schema?: GeneDef[]
+}
+
+export interface OptimizationBacktestConfig {
+  symbols: string[]
+  timeframes: string[]
+  start_time: number
+  end_time: number
+  initial_balance: number
+}
+
+export interface GenerationStats {
+  generation: number
+  best_fitness: number
+}
+
+export interface OptimizationProgress {
+  generation: number
+  best_fitness: number
+  best_genes: Record<string, number>
+  history: GenerationStats[]
+}
+
+export interface OptimizationIndividual {
+  genes: Record<string, number>
+  fitness: number
+  parameters: Record<string, number>
+  metrics: BacktestMetrics
+}
+
+export interface OptimizationStatus {
+  id: string
+  status: 'running' | 'completed' | 'failed' | 'cancelled'
+  config: GAConfig
+  progress: OptimizationProgress
+  current_generation?: number
+  total_generations?: number
+  progress_pct?: number
+  best_fitness?: number
+  error?: string
+  result?: {
+    best_chromosome: any
+    best_config: StrategyConfig
+  }
+  best_individual?: OptimizationIndividual // Frontend helper field
 }

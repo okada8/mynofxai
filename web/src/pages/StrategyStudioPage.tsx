@@ -488,43 +488,72 @@ export function StrategyStudioPage() {
     }
   }
 
-  // Apply optimized parameters
-  const applyParamsToConfig = (params: Record<string, number>) => {
-    if (!editingConfig) return
-    
-    // Create a deep copy to avoid direct mutation
-    const newConfig = JSON.parse(JSON.stringify(editingConfig))
-    
-    // Apply each parameter
+  // Helper to apply params to a config object
+  const applyParamsHelper = (baseConfig: StrategyConfig, params: Record<string, number>): StrategyConfig => {
+    const newConfig = JSON.parse(JSON.stringify(baseConfig))
     Object.entries(params).forEach(([path, value]) => {
       const parts = path.split('.')
       let current: any = newConfig
-      
-      // Traverse to the parent object
       for (let i = 0; i < parts.length - 1; i++) {
-        if (current[parts[i]] === undefined) {
-          console.warn(`Path not found: ${parts.slice(0, i+1).join('.')}`)
-          return
-        }
+        if (current[parts[i]] === undefined) return
         current = current[parts[i]]
       }
-      
-      // Set value on the leaf property
       const lastPart = parts[parts.length - 1]
-      // Handle array indices (e.g. "indicators.rsi_periods.0")
       if (!isNaN(parseInt(lastPart))) {
-        // Array index
         current[parseInt(lastPart)] = value
       } else {
-        // Object property
         current[lastPart] = value
       }
     })
-    
+    return newConfig
+  }
+
+  // Apply optimized parameters to current editing config
+  const applyParamsToConfig = (params: Record<string, number>) => {
+    if (!editingConfig) return
+    const newConfig = applyParamsHelper(editingConfig, params)
     setEditingConfig(newConfig)
     setHasChanges(true)
     notify.success(language === 'zh' ? '参数已应用' : 'Parameters applied')
-    setActiveRightTab('prompt') // Switch back to preview
+    setActiveRightTab('prompt')
+  }
+
+  // Save optimized result as new strategy
+  const handleSaveAsNewStrategy = async (params: Record<string, number>, baseStrategyId: string) => {
+    if (!token) return
+    
+    // Find base strategy
+    const baseStrategy = strategies.find(s => s.id === baseStrategyId)
+    if (!baseStrategy) return
+
+    try {
+      const newConfig = applyParamsHelper(baseStrategy.config, params)
+      
+      const response = await fetch(`${API_BASE}/api/strategies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: `${baseStrategy.name} (${language === 'zh' ? '优化版' : 'Optimized'})`,
+          description: language === 'zh' ? '通过遗传算法优化生成的策略' : 'Generated via GA optimization',
+          config: newConfig,
+        }),
+      })
+      
+      if (!response.ok) throw new Error('Failed to create strategy')
+      await response.json()
+      
+      notify.success(language === 'zh' ? '新策略已保存' : 'New strategy saved')
+      await fetchStrategies()
+      
+      // Optionally switch to the new strategy
+      // ...
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      notify.error(errorMsg)
+    }
   }
 
   const t = (key: string) => {
@@ -1285,6 +1314,7 @@ export function StrategyStudioPage() {
                     strategyId={selectedStrategy.id}
                     config={editingConfig}
                     onApplyParams={applyParamsToConfig}
+                    onSaveAsNewStrategy={handleSaveAsNewStrategy}
                     language={language as 'zh' | 'en'}
                   />
                 )}

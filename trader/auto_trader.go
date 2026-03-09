@@ -976,7 +976,7 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 	strategyConfig := at.strategyEngine.GetConfig()
 	btcEthLeverage := strategyConfig.RiskControl.BTCETHMaxLeverage
 	altcoinLeverage := strategyConfig.RiskControl.AltcoinMaxLeverage
-	logger.Infof("📋 [%s] Strategy leverage config: BTC/ETH=%dx, Altcoin=%dx", at.name, btcEthLeverage, altcoinLeverage)
+	logger.Infof("📋 [%s] Strategy leverage config: BTC/ETH=%.1fx, Altcoin=%.1fx", at.name, btcEthLeverage, altcoinLeverage)
 
 	// 6. Build context
 	ctx := &kernel.Context{

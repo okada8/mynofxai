@@ -933,12 +933,12 @@ func (r *Runner) resolveLeverage(requested int, symbol string, volatility, drawd
 	// Determine configured max leverage for this symbol type
 	var maxLeverage int
 	if isBTCETH {
-		maxLeverage = r.cfg.Leverage.BTCETHLeverage
+		maxLeverage = int(r.cfg.Leverage.BTCETHLeverage)
 		if maxLeverage <= 0 {
 			maxLeverage = 10 // Default max for BTC/ETH
 		}
 	} else {
-		maxLeverage = r.cfg.Leverage.AltcoinLeverage
+		maxLeverage = int(r.cfg.Leverage.AltcoinLeverage)
 		if maxLeverage <= 0 {
 			maxLeverage = 5 // Default max for altcoins
 		}

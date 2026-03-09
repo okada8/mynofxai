@@ -704,7 +704,7 @@ func (s *Server) resolveStrategyCoins(strategyConfig *store.StrategyConfig) ([]s
 			}
 		}
 
-	case "mixed":
+	case "mixed", "dynamic_macro":
 		// Get from AI500
 		if coinSource.UseAI500 {
 			limit := coinSource.AI500Limit
@@ -746,6 +746,85 @@ func (s *Server) resolveStrategyCoins(strategyConfig *store.StrategyConfig) ([]s
 					}
 				}
 			}
+		}
+
+		// Get from OI Low
+		if coinSource.UseOILow {
+			coins, err := nofxos.DefaultClient().GetOILowSymbols()
+			if err != nil {
+				logger.Warnf("Failed to get OI Low coins: %v", err)
+			} else {
+				limit := coinSource.OILowLimit
+				if limit <= 0 || limit > len(coins) {
+					limit = len(coins)
+				}
+				for i, sym := range coins {
+					if i >= limit {
+						break
+					}
+					sym = market.Normalize(sym)
+					if !symbolSet[sym] {
+						symbols = append(symbols, sym)
+						symbolSet[sym] = true
+					}
+				}
+			}
+		}
+
+		// Get from Gainers/Losers
+		if coinSource.UseGainersLosers {
+			limit := coinSource.GainersTop
+			if limit <= 0 {
+				limit = 10
+			}
+			losersLimit := coinSource.LosersTop
+			if losersLimit > limit {
+				limit = losersLimit
+			}
+			
+			rankingData, err := nofxos.DefaultClient().GetPriceRanking("24h", limit)
+			if err != nil {
+				logger.Warnf("Failed to get Price Ranking coins: %v", err)
+			} else if rankingData != nil && rankingData.Durations != nil {
+				if d24h, ok := rankingData.Durations["24h"]; ok {
+					// Add Gainers
+					for i, item := range d24h.Top {
+						if i >= coinSource.GainersTop && coinSource.GainersTop > 0 {
+							break
+						}
+						sym := market.Normalize(item.Symbol)
+						if !symbolSet[sym] {
+							symbols = append(symbols, sym)
+							symbolSet[sym] = true
+						}
+					}
+					// Add Losers
+					for i, item := range d24h.Low {
+						if i >= coinSource.LosersTop && coinSource.LosersTop > 0 {
+							break
+						}
+						sym := market.Normalize(item.Symbol)
+						if !symbolSet[sym] {
+							symbols = append(symbols, sym)
+							symbolSet[sym] = true
+						}
+					}
+				}
+			}
+		}
+
+		// Get from Screener
+		if coinSource.UseScreener {
+			// Note: This requires CoinAnk client which is not readily available in Server struct
+			// skipping for now in backtest resolution, or we need to add CoinAnk client to Server
+			logger.Warnf("Screener source not fully supported in backtest symbol resolution yet")
+		}
+
+		// Get from Hyperliquid All
+		if coinSource.UseHyperAll {
+			// Note: This requires Hyperliquid client/provider
+			// For backtest, we might skip or implement if needed
+			logger.Warnf("Hyperliquid source not fully supported in backtest symbol resolution yet")
 		}
 
 		// Add static coins

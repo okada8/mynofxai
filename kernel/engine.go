@@ -128,10 +128,10 @@ type Context struct {
 	OIRankingData      *nofxos.OIRankingData      `json:"-"` // Market-wide OI ranking data
 	NetFlowRankingData *nofxos.NetFlowRankingData `json:"-"` // Market-wide fund flow ranking data
 	PriceRankingData   *nofxos.PriceRankingData   `json:"-"` // Market-wide price gainers/losers
-	BTCETHLeverage     int                          `json:"-"`
-	AltcoinLeverage int                                `json:"-"`
-	Timeframes      []string                           `json:"-"`
-	RiskState       *RiskState                         `json:"risk_state,omitempty"` // Real-time risk status (VaR, Risk Level)
+	BTCETHLeverage     float64                    `json:"-"`
+	AltcoinLeverage    float64                    `json:"-"`
+	Timeframes         []string                   `json:"-"`
+	RiskState          *RiskState                 `json:"risk_state,omitempty"` // Real-time risk status (VaR, Risk Level)
 }
 
 // RiskState represents the current risk status of the portfolio
@@ -571,7 +571,7 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 		}
 		return e.filterExcludedCoins(coins), nil
 
-	case "mixed":
+	case "mixed", "dynamic_macro":
 		if coinSource.UseAI500 {
 			poolCoins, err := e.getAI500Coins(coinSource.AI500Limit)
 			if err != nil {
@@ -634,6 +634,17 @@ func (e *StrategyEngine) GetCandidateCoins() ([]CandidateCoin, error) {
 			} else {
 				for _, coin := range hyperMainCoins {
 					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], "hyper_main")
+				}
+			}
+		}
+
+		if coinSource.UseGainersLosers {
+			glCoins, err := e.getGainersLosersCoins(coinSource.GainersTop, coinSource.LosersTop)
+			if err != nil {
+				logger.Infof("⚠️  Failed to get Gainers/Losers coins: %v", err)
+			} else {
+				for _, coin := range glCoins {
+					symbolSources[coin.Symbol] = append(symbolSources[coin.Symbol], coin.Sources...)
 				}
 			}
 		}
@@ -797,6 +808,57 @@ func (e *StrategyEngine) getHyperMainCoins(limit int) ([]CandidateCoin, error) {
 		})
 	}
 	logger.Infof("✅ Loaded %d Hyperliquid main coins (hyper_main) by 24h volume", len(candidates))
+	return candidates, nil
+}
+
+// getGainersLosersCoins returns coins from top gainers and losers
+func (e *StrategyEngine) getGainersLosersCoins(gainersLimit, losersLimit int) ([]CandidateCoin, error) {
+	if gainersLimit <= 0 {
+		gainersLimit = 10
+	}
+	if losersLimit <= 0 {
+		losersLimit = 10
+	}
+	maxLimit := gainersLimit
+	if losersLimit > maxLimit {
+		maxLimit = losersLimit
+	}
+
+	// Fetch 24h price ranking
+	rankingData, err := e.nofxosClient.GetPriceRanking("24h", maxLimit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get price ranking: %w", err)
+	}
+
+	var candidates []CandidateCoin
+
+	// Extract gainers
+	if rankingData.Durations != nil {
+		if d24h, ok := rankingData.Durations["24h"]; ok {
+			for i, item := range d24h.Top {
+				if i >= gainersLimit {
+					break
+				}
+				symbol := market.Normalize(item.Symbol)
+				candidates = append(candidates, CandidateCoin{
+					Symbol:  symbol,
+					Sources: []string{"price_gainers"},
+				})
+			}
+			for i, item := range d24h.Low {
+				if i >= losersLimit {
+					break
+				}
+				symbol := market.Normalize(item.Symbol)
+				candidates = append(candidates, CandidateCoin{
+					Symbol:  symbol,
+					Sources: []string{"price_losers"},
+				})
+			}
+		}
+	}
+
+	logger.Infof("✅ Loaded %d Gainers/Losers coins", len(candidates))
 	return candidates, nil
 }
 
@@ -1200,7 +1262,7 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant string
 	sb.WriteString(fmt.Sprintf("- Min Position Size: ≥%.0f USDT\n\n", riskControl.MinPositionSize))
 
 	sb.WriteString("## AI GUIDED (Recommended, you should follow):\n")
-	sb.WriteString(fmt.Sprintf("- Trading Leverage: Altcoins max %dx | BTC/ETH max %dx\n",
+	sb.WriteString(fmt.Sprintf("- Trading Leverage: Altcoins max %.1fx | BTC/ETH max %.1fx\n",
 		riskControl.AltcoinMaxLeverage, riskControl.BTCETHMaxLeverage))
 	sb.WriteString(fmt.Sprintf("- Risk-Reward Ratio: ≥1:%.1f (take_profit / stop_loss)\n", riskControl.MinRiskRewardRatio))
 	sb.WriteString(fmt.Sprintf("- Min Confidence: ≥%d to open position\n\n", riskControl.MinConfidence))
@@ -1265,7 +1327,7 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant string
 	// Use the actual configured position value ratio for BTC/ETH in the example
 	examplePositionSize := accountEquity * btcEthPosValueRatio
 	sb.WriteString(fmt.Sprintf("  {\"symbol\": \"BTCUSDT\", \"action\": \"open_short\", \"leverage\": %d, \"position_size_usd\": %.0f, \"stop_loss\": 97000, \"take_profit\": 91000, \"confidence\": 85, \"risk_usd\": 300},\n",
-		riskControl.BTCETHMaxLeverage, examplePositionSize))
+		int(riskControl.BTCETHMaxLeverage), examplePositionSize))
 	sb.WriteString("  {\"symbol\": \"ETHUSDT\", \"action\": \"close_long\"}\n")
 	sb.WriteString("]\n```\n")
 	sb.WriteString("</decision>\n\n")
@@ -1969,7 +2031,7 @@ func formatFloatSlice(values []float64) string {
 // AI Response Parsing
 // ============================================================================
 
-func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthLeverage, altcoinLeverage int, btcEthPosRatio, altcoinPosRatio float64) (*FullDecision, error) {
+func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthLeverage, altcoinLeverage float64, btcEthPosRatio, altcoinPosRatio float64) (*FullDecision, error) {
 	cotTrace := extractCoTTrace(aiResponse)
 
 	decisions, err := extractDecisions(aiResponse)
@@ -2146,7 +2208,7 @@ func compactArrayOpen(s string) string {
 // Decision Validation
 // ============================================================================
 
-func validateDecisions(decisions []Decision, accountEquity float64, btcEthLeverage, altcoinLeverage int, btcEthPosRatio, altcoinPosRatio float64) error {
+func validateDecisions(decisions []Decision, accountEquity float64, btcEthLeverage, altcoinLeverage float64, btcEthPosRatio, altcoinPosRatio float64) error {
 	for i := range decisions {
 		if err := validateDecision(&decisions[i], accountEquity, btcEthLeverage, altcoinLeverage, btcEthPosRatio, altcoinPosRatio); err != nil {
 			return fmt.Errorf("decision #%d validation failed: %w", i+1, err)
@@ -2155,7 +2217,7 @@ func validateDecisions(decisions []Decision, accountEquity float64, btcEthLevera
 	return nil
 }
 
-func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoinLeverage int, btcEthPosRatio, altcoinPosRatio float64) error {
+func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoinLeverage float64, btcEthPosRatio, altcoinPosRatio float64) error {
 	validActions := map[string]bool{
 		"open_long":   true,
 		"open_short":  true,
@@ -2182,10 +2244,10 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 		if d.Leverage <= 0 {
 			return fmt.Errorf("leverage must be greater than 0: %d", d.Leverage)
 		}
-		if d.Leverage > maxLeverage {
-			logger.Infof("⚠️  [Leverage Fallback] %s leverage exceeded (%dx > %dx), auto-adjusting to limit %dx",
+		if float64(d.Leverage) > maxLeverage {
+			logger.Infof("⚠️  [Leverage Fallback] %s leverage exceeded (%dx > %.1fx), auto-adjusting to limit %.1fx",
 				d.Symbol, d.Leverage, maxLeverage, maxLeverage)
-			d.Leverage = maxLeverage
+			d.Leverage = int(maxLeverage)
 		}
 		if d.PositionSizeUSD <= 0 {
 			return fmt.Errorf("position size must be greater than 0: %.2f", d.PositionSizeUSD)

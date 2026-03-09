@@ -53,6 +53,9 @@ type StrategyConfig struct {
 	// Enhanced risk control (new in nofx 2.0)
 	RiskControlEnhanced *RiskControlEnhanced `json:"risk_control_enhanced,omitempty"`
 
+	// Macro configuration (new in nofx 3.0)
+	MacroConfig *MacroConfig `json:"macro_config,omitempty"`
+
 	// editable sections of System Prompt
 	PromptSections PromptSectionsConfig `json:"prompt_sections,omitempty"`
 	// volatility configuration
@@ -208,6 +211,9 @@ type CoinSourceConfig struct {
 	GainersTop         int  `json:"gainers_top,omitempty"`
 	LosersTop          int  `json:"losers_top,omitempty"`
 	OnlyBinanceSymbols bool `json:"only_binance_symbols"`
+
+	// Macro screening (new in nofx 3.0)
+	MacroScreening *MacroScreeningConfig `json:"macro_screening,omitempty"`
 }
 
 // IndicatorConfig indicator configuration
@@ -264,7 +270,10 @@ type IndicatorConfig struct {
 	WeightVolumeSpike              float64               `json:"weight_volume_spike"`
 	WeightFundingRate              float64               `json:"weight_funding_rate"`
 	WeightOrderbookImbalance       float64               `json:"weight_orderbook_imbalance"`
-	GroupedWeights                 *GroupedWeightsConfig `json:"grouped_weights,omitempty"`
+	GroupedWeights                 map[string]WeightsConfig `json:"grouped_weights,omitempty"`
+
+	// Macro data sources (new in nofx 3.0)
+	MacroDataSources []string `json:"macro_data_sources,omitempty"`
 
 	// ========== NofxOS Unified API Configuration ==========
 	// Unified API Key for all NofxOS data sources
@@ -414,9 +423,9 @@ type RiskControlConfig struct {
 	MaxPositions int `json:"max_positions"`
 
 	// BTC/ETH exchange leverage for opening positions (AI guided)
-	BTCETHMaxLeverage int `json:"btc_eth_max_leverage"`
+	BTCETHMaxLeverage float64 `json:"btc_eth_max_leverage"`
 	// Altcoin exchange leverage for opening positions (AI guided)
-	AltcoinMaxLeverage int `json:"altcoin_max_leverage"`
+	AltcoinMaxLeverage float64 `json:"altcoin_max_leverage"`
 
 	// BTC/ETH single position max value = equity × this ratio (CODE ENFORCED, default: 5)
 	BTCETHMaxPositionValueRatio float64 `json:"btc_eth_max_position_value_ratio"`
@@ -432,6 +441,9 @@ type RiskControlConfig struct {
 	MinRiskRewardRatio float64 `json:"min_risk_reward_ratio"`
 	// Min AI confidence to open position (AI guided)
 	MinConfidence int `json:"min_confidence"`
+
+	// Macro risk adjustments (new in nofx 3.0)
+	MacroRiskAdjustments map[string]MacroRiskAdjustment `json:"macro_risk_adjustments,omitempty"`
 
 	// Execution & Orders
 	EnforceStopLossTakeProfit   bool    `json:"enforce_stop_loss_take_profit"`
@@ -605,6 +617,28 @@ type RiskControlConfig struct {
 type DynamicTPConfig struct {
 	TriggerROEPct float64 `json:"trigger_roe_pct"`
 	TargetTPPct   float64 `json:"target_tp_pct"`
+}
+
+// MacroConfig macro configuration
+type MacroConfig struct {
+	CurrentRegime            string            `json:"current_regime"`
+	AssumedConditions        map[string]string `json:"assumed_conditions"`
+	RegimeDetectionFrequency string            `json:"regime_detection_frequency"`
+	DataSources              []string          `json:"data_sources"`
+}
+
+// MacroScreeningConfig macro screening configuration
+type MacroScreeningConfig struct {
+	EnableMacroFilter bool               `json:"enable_macro_filter"`
+	SectorAllocation  map[string]float64 `json:"sector_allocation"`
+	MaxSectorExposure float64            `json:"max_sector_exposure"`
+}
+
+// MacroRiskAdjustment macro risk adjustment parameters
+type MacroRiskAdjustment struct {
+	LeverageMultiplier     float64 `json:"leverage_multiplier"`
+	PositionSizeMultiplier float64 `json:"position_size_multiplier"`
+	MaxPositions           int     `json:"max_positions"`
 }
 
 // NewStrategyStore creates a new StrategyStore
