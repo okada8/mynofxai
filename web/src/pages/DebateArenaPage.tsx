@@ -73,6 +73,7 @@ const PERS: Record<DebatePersonality, { emoji: string; color: string; name: stri
   analyst: { emoji: '📊', color: '#3B82F6', name: '分析', nameEn: 'Analyst' },
   contrarian: { emoji: '🔄', color: '#F59E0B', name: '逆势', nameEn: 'Contrarian' },
   risk_manager: { emoji: '🛡️', color: '#8B5CF6', name: '风控', nameEn: 'Risk Mgr' },
+  event_analyst: { emoji: '🔮', color: '#EC4899', name: '事件', nameEn: 'Event Analyst' },
 }
 
 // Action config
@@ -366,7 +367,7 @@ function CreateModal({
   const addP = () => {
     if (participants.length >= 10 || aiModels.length === 0) return
     // Allow same AI model to be used multiple times with different personalities
-    const order: DebatePersonality[] = ['bull', 'bear', 'analyst', 'contrarian', 'risk_manager']
+    const order: DebatePersonality[] = ['bull', 'bear', 'analyst', 'contrarian', 'risk_manager', 'event_analyst']
     // Cycle through personalities
     const nextPersonality = order[participants.length % order.length]
     setParticipants([...participants, { ai_model_id: aiModels[0].id, personality: nextPersonality }])

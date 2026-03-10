@@ -1,0 +1,54 @@
+[
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "conditionId", "type": "bytes32" },
+      { "name": "indexSet", "type": "uint256" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "split",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "conditionId", "type": "bytes32" },
+      { "name": "indexSet", "type": "uint256" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "merge",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "conditionId", "type": "bytes32" },
+      { "name": "indexSet", "type": "uint256" }
+    ],
+    "name": "redeemPositions",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "collateralToken", "type": "address" },
+      { "name": "parentCollectionId", "type": "bytes32" },
+      { "name": "conditionId", "type": "bytes32" },
+      { "name": "partition", "type": "uint256[]" }
+    ],
+    "name": "prepareCondition",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

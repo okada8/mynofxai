@@ -30,6 +30,7 @@ const SUPPORTED_EXCHANGE_TEMPLATES = [
   { exchange_type: 'hyperliquid', name: 'Hyperliquid', type: 'dex' as const },
   { exchange_type: 'aster', name: 'Aster DEX', type: 'dex' as const },
   { exchange_type: 'lighter', name: 'Lighter', type: 'dex' as const },
+  { exchange_type: 'polymarket', name: 'Polymarket', type: 'dex' as const },
   { exchange_type: 'indodax', name: 'Indodax', type: 'cex' as const },
 ]
 
@@ -51,7 +52,11 @@ interface ExchangeConfigModalProps {
     lighterWalletAddr?: string,
     lighterPrivateKey?: string,
     lighterApiKeyPrivateKey?: string,
-    lighterApiKeyIndex?: number
+    lighterApiKeyIndex?: number,
+    // Polymarket params
+    polymarketWalletAddr?: string,
+    polymarketPrivateKey?: string,
+    polymarketRpcUrl?: string
   ) => Promise<void>
   onDelete: (exchangeId: string) => void
   onClose: () => void
@@ -178,8 +183,13 @@ export function ExchangeConfigModal({
   const [lighterApiKeyPrivateKey, setLighterApiKeyPrivateKey] = useState('')
   const [lighterApiKeyIndex, setLighterApiKeyIndex] = useState(0)
 
+  // Polymarket fields
+  const [polymarketWalletAddr, setPolymarketWalletAddr] = useState('')
+  const [polymarketPrivateKey, setPolymarketPrivateKey] = useState('')
+  const [polymarketRpcUrl, setPolymarketRpcUrl] = useState('https://polygon-rpc.com')
+
   // Other state
-  const [secureInputTarget, setSecureInputTarget] = useState<null | 'hyperliquid' | 'aster' | 'lighter'>(null)
+  const [secureInputTarget, setSecureInputTarget] = useState<null | 'hyperliquid' | 'aster' | 'lighter' | 'polymarket'>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [accountName, setAccountName] = useState('')
 
@@ -223,6 +233,9 @@ export function ExchangeConfigModal({
       setLighterWalletAddr(selectedExchange.lighterWalletAddr || '')
       setLighterApiKeyPrivateKey('')
       setLighterApiKeyIndex(selectedExchange.lighterApiKeyIndex || 0)
+      setPolymarketWalletAddr(selectedExchange.polymarketWalletAddr || '')
+      setPolymarketPrivateKey('')
+      setPolymarketRpcUrl(selectedExchange.polymarketRpcUrl || 'https://polygon-rpc.com')
     }
   }, [editingExchangeId, selectedExchange])
 
@@ -271,6 +284,7 @@ export function ExchangeConfigModal({
     const trimmed = value.trim()
     if (secureInputTarget === 'hyperliquid') setApiKey(trimmed)
     if (secureInputTarget === 'aster') setAsterPrivateKey(trimmed)
+    if (secureInputTarget === 'polymarket') setPolymarketPrivateKey(trimmed)
     if (secureInputTarget === 'lighter') {
       setLighterApiKeyPrivateKey(trimmed)
       toast.success(t('lighterApiKeyImported', language))
@@ -329,6 +343,9 @@ export function ExchangeConfigModal({
       } else if (currentExchangeType === 'lighter') {
         if (!lighterWalletAddr.trim() || !lighterApiKeyPrivateKey.trim()) return
         await onSave(exchangeId, exchangeType, trimmedAccountName, '', '', '', testnet, undefined, undefined, undefined, undefined, lighterWalletAddr.trim(), '', lighterApiKeyPrivateKey.trim(), lighterApiKeyIndex)
+      } else if (currentExchangeType === 'polymarket') {
+        if (!polymarketWalletAddr.trim() || !polymarketPrivateKey.trim()) return
+        await onSave(exchangeId, exchangeType, trimmedAccountName, '', '', '', testnet, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, polymarketWalletAddr.trim(), polymarketPrivateKey.trim(), polymarketRpcUrl.trim())
       } else {
         if (!apiKey.trim() || !secretKey.trim()) return
         await onSave(exchangeId, exchangeType, trimmedAccountName, apiKey.trim(), secretKey.trim(), '', testnet)
@@ -747,6 +764,55 @@ export function ExchangeConfigModal({
                       </Tooltip>
                     </label>
                     <input type="number" min={0} max={255} value={lighterApiKeyIndex} onChange={(e) => setLighterApiKeyIndex(parseInt(e.target.value) || 0)} className="w-full px-4 py-3 rounded-xl" style={{ background: '#0B0E11', border: '1px solid #2B3139', color: '#EAECEF' }} />
+                  </div>
+                </>
+              )}
+
+              {/* Polymarket Fields */}
+              {currentExchangeType === 'polymarket' && (
+                <>
+                  <div className="p-4 rounded-xl" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                    <div className="flex items-start gap-2">
+                      <span style={{ fontSize: '16px' }}>🔮</span>
+                      <div>
+                        <div className="text-sm font-semibold mb-1" style={{ color: '#3B82F6' }}>
+                          {language === 'zh' ? 'Polymarket 预测市场' : 'Polymarket Prediction Market'}
+                        </div>
+                        <div className="text-xs" style={{ color: '#848E9C' }}>
+                          {language === 'zh' ? '需要 Polygon 钱包地址和私钥进行交易' : 'Requires Polygon wallet address and private key'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold" style={{ color: '#EAECEF' }}>{language === 'zh' ? '钱包地址' : 'Wallet Address'} *</label>
+                    <input type="text" value={polymarketWalletAddr} onChange={(e) => setPolymarketWalletAddr(e.target.value)} placeholder={language === 'zh' ? '输入 Polygon 钱包地址' : 'Enter Polygon wallet address'} className="w-full px-4 py-3 rounded-xl" style={{ background: '#0B0E11', border: '1px solid #2B3139', color: '#EAECEF' }} required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#EAECEF' }}>
+                      {language === 'zh' ? '私钥' : 'Private Key'} *
+                      <button type="button" onClick={() => setSecureInputTarget('polymarket')} className="text-xs underline" style={{ color: '#3B82F6' }}>{t('secureInputButton', language)}</button>
+                    </label>
+                    <input type="password" value={polymarketPrivateKey} onChange={(e) => setPolymarketPrivateKey(e.target.value)} placeholder={language === 'zh' ? '输入钱包私钥' : 'Enter wallet private key'} className="w-full px-4 py-3 rounded-xl font-mono" style={{ background: '#0B0E11', border: '1px solid #2B3139', color: '#EAECEF' }} required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold" style={{ color: '#EAECEF' }}>RPC URL</label>
+                    <input type="text" value={polymarketRpcUrl} onChange={(e) => setPolymarketRpcUrl(e.target.value)} placeholder="https://polygon-rpc.com" className="w-full px-4 py-3 rounded-xl" style={{ background: '#0B0E11', border: '1px solid #2B3139', color: '#EAECEF' }} />
+                    <div className="flex gap-2 mt-1">
+                      <button type="button" onClick={() => setPolymarketRpcUrl('https://polygon-rpc.com')} className="px-2 py-1 rounded text-xs" style={{ background: '#2B3139', color: '#848E9C' }}>
+                        {language === 'zh' ? '主网' : 'Mainnet'}
+                      </button>
+                      <button type="button" onClick={() => setPolymarketRpcUrl('https://rpc-mumbai.maticvigil.com')} className="px-2 py-1 rounded text-xs" style={{ background: '#2B3139', color: '#848E9C' }}>
+                        {language === 'zh' ? '测试网' : 'Testnet'}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2 border-t" style={{ borderColor: '#2B3139' }}>
+                    <div className="flex items-center gap-2 text-sm text-yellow-400">
+                      <span>⚠️</span>
+                      <span>{language === 'zh' ? '安全提示：私钥请妥善保管，建议使用专用交易钱包' : 'Security Warning: Keep your private key safe. Use a dedicated wallet.'}</span>
+                    </div>
                   </div>
                 </>
               )}

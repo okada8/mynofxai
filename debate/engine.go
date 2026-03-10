@@ -1073,6 +1073,8 @@ func getPersonalityDescription(personality store.DebatePersonality) string {
 		return "Contrarian - You challenge majority opinions and look for overlooked opportunities. Question consensus views and find alternative interpretations of the data."
 	case store.PersonalityRiskManager:
 		return "Risk Manager - You focus on position sizing, stop losses, and capital preservation. Evaluate risk/reward ratios and warn about potential downsides."
+	case store.PersonalityEventAnalyst:
+		return "Event Analyst - You specialize in prediction markets and event probability. Analyze news, polls, and fundamental data to estimate true event probabilities. Look for mispricing between market odds and reality."
 	default:
 		return "Market Analyst - Provide balanced technical analysis."
 	}

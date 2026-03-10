@@ -28,6 +28,7 @@ const (
 	PersonalityAnalyst     DebatePersonality = "analyst"      // Data Analyst - pure technical analysis
 	PersonalityContrarian  DebatePersonality = "contrarian"   // Contrarian - challenges majority opinion
 	PersonalityRiskManager DebatePersonality = "risk_manager" // Risk Manager - focuses on position sizing
+	PersonalityEventAnalyst DebatePersonality = "event_analyst" // Event Analyst - focuses on prediction markets
 )
 
 // PersonalityColors maps personalities to colors for UI
@@ -37,6 +38,7 @@ var PersonalityColors = map[DebatePersonality]string{
 	PersonalityAnalyst:     "#3B82F6", // Blue
 	PersonalityContrarian:  "#F59E0B", // Amber
 	PersonalityRiskManager: "#8B5CF6", // Purple
+	PersonalityEventAnalyst: "#EC4899", // Pink
 }
 
 // PersonalityEmojis maps personalities to emojis
@@ -46,6 +48,7 @@ var PersonalityEmojis = map[DebatePersonality]string{
 	PersonalityAnalyst:     "📊",
 	PersonalityContrarian:  "🔄",
 	PersonalityRiskManager: "🛡️",
+	PersonalityEventAnalyst: "🔮",
 }
 
 // DebateDecision represents a trading decision from the debate

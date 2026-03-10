@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"nofx/api/polymarket"
 	"nofx/auth"
 	"nofx/backtest"
 	"nofx/config"
@@ -280,6 +281,11 @@ func (s *Server) setupRoutes() {
 			protected.GET("/debates/:id/messages", s.debateHandler.HandleGetMessages)
 			protected.GET("/debates/:id/votes", s.debateHandler.HandleGetVotes)
 			protected.GET("/debates/:id/stream", s.debateHandler.HandleDebateStream)
+
+			// Polymarket Routes
+			polymarketHandler := polymarket.NewHandler()
+			polymarketGroup := protected.Group("/polymarket")
+			polymarketHandler.RegisterRoutes(polymarketGroup)
 
 			// Data for specified trader (using query parameter ?trader_id=xxx)
 			protected.GET("/status", s.handleStatus)

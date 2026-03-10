@@ -22,6 +22,7 @@ import (
 	"nofx/trader/kucoin"
 	"nofx/trader/lighter"
 	"nofx/trader/okx"
+	"nofx/trader/polymarket"
 	"nofx/trader/risk"
 	"strings"
 	"sync"
@@ -77,6 +78,11 @@ type AutoTraderConfig struct {
 	HyperliquidWalletAddr  string
 	HyperliquidTestnet     bool
 	HyperliquidUnifiedAcct bool // Unified Account mode: Spot USDC as Perp collateral
+
+	// Polymarket Configuration
+	PolymarketPrivateKey string
+	PolymarketRPCURL     string
+	PolymarketWalletAddr string
 
 	// Aster configuration
 	AsterUser       string // Aster main wallet address
@@ -306,6 +312,12 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	case "indodax":
 		logger.Infof("🏦 [%s] Using Indodax Spot trading", config.Name)
 		trader = indodax.NewIndodaxTrader(config.IndodaxAPIKey, config.IndodaxSecretKey)
+	case "polymarket":
+		logger.Infof("🔮 [%s] Using Polymarket prediction trading", config.Name)
+		trader, err = polymarket.NewPolymarketTrader(config.PolymarketPrivateKey, config.PolymarketWalletAddr, config.PolymarketRPCURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize Polymarket trader: %w", err)
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trading platform: %s", config.Exchange)
 	}

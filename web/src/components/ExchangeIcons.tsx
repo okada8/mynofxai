@@ -17,6 +17,7 @@ const ICON_PATHS: Record<string, string> = {
   hyperliquid: '/exchange-icons/hyperliquid.png',
   aster: '/exchange-icons/aster.svg',
   lighter: '/exchange-icons/lighter.png',
+  polymarket: '/exchange-icons/polymarket.png',
 }
 
 // 通用图标组件
