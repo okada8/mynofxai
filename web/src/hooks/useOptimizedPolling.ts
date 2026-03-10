@@ -43,12 +43,7 @@ export function useOptimizedPolling<T>(
   callback: PollingCallback<T>,
   options: UseOptimizedPollingOptions = {}
 ) {
-  const {
-    interval = 1000,
-    enabled = true,
-    onSuccess,
-    onError
-  } = options
+  const { interval = 1000, enabled = true, onSuccess, onError } = options
 
   const [data, setData] = useState<T | null>(null)
   const prevDataRef = useRef<T | null>(null)
@@ -73,7 +68,7 @@ export function useOptimizedPolling<T>(
 
     try {
       const newData = await callback()
-      
+
       if (!mountedRef.current) return
 
       // Shallow comparison to avoid unnecessary re-renders
@@ -87,9 +82,9 @@ export function useOptimizedPolling<T>(
       timeoutRef.current = setTimeout(poll, currentInterval)
     } catch (err) {
       if (!mountedRef.current) return
-      
+
       if (onError) onError(err)
-      
+
       // Retry with backoff or standard interval
       timeoutRef.current = setTimeout(poll, currentInterval)
     }

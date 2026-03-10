@@ -24,7 +24,7 @@ import {
   TrendingUp as ArrowUp,
   TrendingDown as ArrowDown,
   Activity,
-  Zap
+  Zap,
 } from 'lucide-react'
 
 interface EquityPoint {
@@ -40,14 +40,22 @@ interface RealtimeEquityChartProps {
   embedded?: boolean
 }
 
-export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEquityChartProps) {
+export function RealtimeEquityChart({
+  traderId,
+  embedded = false,
+}: RealtimeEquityChartProps) {
   const { language } = useLanguage()
   const { user, token } = useAuth()
   const [displayMode, setDisplayMode] = useState<'dollar' | 'percent'>('dollar')
   const [isLive, setIsLive] = useState(false)
 
   // Use a faster refresh interval for real-time feel
-  const { data: history, error, isLoading, isValidating } = useSWR<EquityPoint[]>(
+  const {
+    data: history,
+    error,
+    isLoading,
+    isValidating,
+  } = useSWR<EquityPoint[]>(
     user && token && traderId ? `equity-history-${traderId}` : null,
     () => api.getEquityHistory(traderId),
     {
@@ -55,7 +63,7 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
       revalidateOnFocus: true,
       dedupingInterval: 1000,
       onSuccess: () => setIsLive(true),
-      onError: () => setIsLive(false)
+      onError: () => setIsLive(false),
     }
   )
 
@@ -73,7 +81,7 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
   const [blink, setBlink] = useState(true)
   useEffect(() => {
     const interval = setInterval(() => {
-      setBlink(b => !b)
+      setBlink((b) => !b)
     }, 1000)
     return () => clearInterval(interval)
   }, [])
@@ -96,16 +104,20 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
 
   if (error) {
     return (
-      <div className={embedded ? 'p-6 h-full flex items-center justify-center' : 'binance-card p-6'}>
+      <div
+        className={
+          embedded
+            ? 'p-6 h-full flex items-center justify-center'
+            : 'binance-card p-6'
+        }
+      >
         <div className="flex items-center gap-3 p-4 rounded bg-nofx-red/10 border border-nofx-red/20">
           <AlertTriangle className="w-6 h-6 text-nofx-red" />
           <div>
             <div className="font-semibold text-nofx-red">
               {t('loadingError', language)}
             </div>
-            <div className="text-sm text-nofx-text-muted">
-              {error.message}
-            </div>
+            <div className="text-sm text-nofx-text-muted">{error.message}</div>
           </div>
         </div>
       </div>
@@ -117,7 +129,13 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
 
   if (!validHistory || validHistory.length === 0) {
     return (
-      <div className={embedded ? 'p-6 h-full flex flex-col justify-center' : 'binance-card p-6'}>
+      <div
+        className={
+          embedded
+            ? 'p-6 h-full flex flex-col justify-center'
+            : 'binance-card p-6'
+        }
+      >
         {!embedded && (
           <h3 className="text-lg font-semibold mb-6 text-[#EAECEF]">
             {t('accountEquityCurve', language)}
@@ -166,7 +184,7 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
       raw_equity: point.total_equity,
       raw_pnl: pnl,
       raw_pnl_pct: parseFloat(pnlPct),
-      timestamp: new Date(point.timestamp).getTime()
+      timestamp: new Date(point.timestamp).getTime(),
     }
   })
 
@@ -176,7 +194,7 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
   // Y-Axis domain calculation
   const calculateYDomain = () => {
     const values = chartData.map((d) => d.value)
-    
+
     if (displayMode === 'percent') {
       const minVal = Math.min(...values)
       const maxVal = Math.max(...values)
@@ -205,15 +223,21 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
             </div>
           </div>
           <div className="font-bold mono text-lg mb-1 text-[#EAECEF]">
-            {data.raw_equity.toFixed(2)} <span className="text-xs text-[#848E9C]">USDT</span>
+            {data.raw_equity.toFixed(2)}{' '}
+            <span className="text-xs text-[#848E9C]">USDT</span>
           </div>
           <div
             className="text-sm mono font-bold flex items-center gap-1"
             style={{ color: data.raw_pnl >= 0 ? '#0ECB81' : '#F6465D' }}
           >
-            {data.raw_pnl >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+            {data.raw_pnl >= 0 ? (
+              <ArrowUp className="w-3 h-3" />
+            ) : (
+              <ArrowDown className="w-3 h-3" />
+            )}
             {data.raw_pnl >= 0 ? '+' : ''}
-            {data.raw_pnl.toFixed(2)} ({data.raw_pnl_pct >= 0 ? '+' : ''}{data.raw_pnl_pct}%)
+            {data.raw_pnl.toFixed(2)} ({data.raw_pnl_pct >= 0 ? '+' : ''}
+            {data.raw_pnl_pct}%)
           </div>
         </div>
       )
@@ -222,7 +246,13 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
   }
 
   return (
-    <div className={embedded ? 'p-3 sm:p-5 h-full flex flex-col' : 'binance-card p-3 sm:p-5 animate-fade-in'}>
+    <div
+      className={
+        embedded
+          ? 'p-3 sm:p-5 h-full flex flex-col'
+          : 'binance-card p-3 sm:p-5 animate-fade-in'
+      }
+    >
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 shrink-0">
         <div className="flex-1">
@@ -241,22 +271,33 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
                 className="text-sm sm:text-lg font-bold mono px-2 sm:px-3 py-0.5 rounded flex items-center gap-1 transition-colors duration-300"
                 style={{
                   color: isProfit ? '#0ECB81' : '#F6465D',
-                  background: isProfit ? 'rgba(14, 203, 129, 0.1)' : 'rgba(246, 70, 93, 0.1)',
+                  background: isProfit
+                    ? 'rgba(14, 203, 129, 0.1)'
+                    : 'rgba(246, 70, 93, 0.1)',
                   border: `1px solid ${isProfit ? 'rgba(14, 203, 129, 0.2)' : 'rgba(246, 70, 93, 0.2)'}`,
                 }}
               >
-                {isProfit ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-                {isProfit ? '+' : ''}{currentValue.raw_pnl_pct}%
+                {isProfit ? (
+                  <ArrowUp className="w-4 h-4" />
+                ) : (
+                  <ArrowDown className="w-4 h-4" />
+                )}
+                {isProfit ? '+' : ''}
+                {currentValue.raw_pnl_pct}%
               </span>
             </div>
-            
+
             {/* Live Indicator */}
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all duration-300 ${
-              isValidating 
-                ? 'bg-nofx-gold/10 border-nofx-gold/30 text-nofx-gold' 
-                : 'bg-white/5 border-white/10 text-nofx-text-muted'
-            }`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${blink ? 'bg-current shadow-[0_0_8px_currentColor]' : 'bg-current/30'}`} />
+            <div
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all duration-300 ${
+                isValidating
+                  ? 'bg-nofx-gold/10 border-nofx-gold/30 text-nofx-gold'
+                  : 'bg-white/5 border-white/10 text-nofx-text-muted'
+              }`}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${blink ? 'bg-current shadow-[0_0_8px_currentColor]' : 'bg-current/30'}`}
+              />
               <span className="text-[10px] font-bold uppercase tracking-wider">
                 {isValidating ? 'LIVE' : 'SYNC'}
               </span>
@@ -295,7 +336,7 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
         <div className="absolute top-4 right-4 text-xl font-bold text-nofx-gold/10 font-mono pointer-events-none z-10 select-none">
           NOFX REALTIME
         </div>
-        
+
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
@@ -307,7 +348,11 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
                 <stop offset="95%" stopColor="#F0B90B" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2B3139" vertical={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#2B3139"
+              vertical={false}
+            />
             <XAxis
               dataKey="time"
               stroke="#5E6673"
@@ -327,7 +372,14 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
               }
               width={40}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#F0B90B', strokeWidth: 1, strokeDasharray: '4 4' }} />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{
+                stroke: '#F0B90B',
+                strokeWidth: 1,
+                strokeDasharray: '4 4',
+              }}
+            />
             <ReferenceLine
               y={displayMode === 'dollar' ? initialBalance : 0}
               stroke="#474D57"
@@ -336,7 +388,7 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
                 value: displayMode === 'dollar' ? 'Init' : '0%',
                 fill: '#848E9C',
                 fontSize: 10,
-                position: 'right'
+                position: 'right',
               }}
             />
             <Area
@@ -354,22 +406,22 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
 
       {/* Footer Stats */}
       <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-3 border-t border-[#2B3139] shrink-0">
-        <StatItem 
-          label={t('initialBalance', language)} 
-          value={`${initialBalance.toFixed(2)} USDT`} 
+        <StatItem
+          label={t('initialBalance', language)}
+          value={`${initialBalance.toFixed(2)} USDT`}
         />
-        <StatItem 
-          label={t('currentEquity', language)} 
-          value={`${currentValue.raw_equity.toFixed(2)} USDT`} 
-          highlight 
+        <StatItem
+          label={t('currentEquity', language)}
+          value={`${currentValue.raw_equity.toFixed(2)} USDT`}
+          highlight
         />
-        <StatItem 
-          label={t('historicalCycles', language)} 
-          value={`${validHistory.length} ${t('cycles', language)}`} 
+        <StatItem
+          label={t('historicalCycles', language)}
+          value={`${validHistory.length} ${t('cycles', language)}`}
         />
-        <StatItem 
-          label="Refresh Rate" 
-          value="2.0s" 
+        <StatItem
+          label="Refresh Rate"
+          value="2.0s"
           icon={<Zap className="w-3 h-3 text-nofx-gold" />}
         />
       </div>
@@ -377,14 +429,26 @@ export function RealtimeEquityChart({ traderId, embedded = false }: RealtimeEqui
   )
 }
 
-function StatItem({ label, value, highlight, icon }: { label: string, value: string, highlight?: boolean, icon?: React.ReactNode }) {
+function StatItem({
+  label,
+  value,
+  highlight,
+  icon,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+  icon?: React.ReactNode
+}) {
   return (
     <div className="p-2 rounded bg-nofx-gold/5 hover:bg-nofx-gold/10 transition-colors">
       <div className="text-[10px] mb-1 uppercase tracking-wider text-[#848E9C] flex items-center gap-1">
         {label}
         {icon}
       </div>
-      <div className={`text-xs sm:text-sm font-bold mono ${highlight ? 'text-[#EAECEF]' : 'text-[#848E9C]'}`}>
+      <div
+        className={`text-xs sm:text-sm font-bold mono ${highlight ? 'text-[#EAECEF]' : 'text-[#848E9C]'}`}
+      >
         {value}
       </div>
     </div>

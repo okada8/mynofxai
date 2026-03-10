@@ -13,6 +13,7 @@ import { LandingPage } from './pages/LandingPage'
 import { TasksPage } from './pages/TasksPage'
 import { StrategyStudioPage } from './pages/StrategyStudioPage'
 import { DebateArenaPage } from './pages/DebateArenaPage'
+import PolymarketPage from './pages/PolymarketPage'
 import { IndicatorsPage } from './pages/IndicatorsPage'
 import { DataPage } from './pages/DataPage'
 import { SystemMonitorPage } from './pages/SystemMonitorPage'
@@ -46,6 +47,7 @@ type Page =
   | 'indicators'
   | 'data'
   | 'debate'
+  | 'polymarket'
   | 'tasks'
   | 'login'
   | 'register'
@@ -61,7 +63,7 @@ function App() {
   // Debug log
   useEffect(() => {
     // console.log('[App] Mounted. Route:', window.location.pathname);
-  }, []);
+  }, [])
 
   // 从URL路径读取初始页面状态（支持刷新保持页面）
   const getInitialPage = (): Page => {
@@ -74,6 +76,7 @@ function App() {
     if (path === '/indicators' || hash === 'indicators') return 'indicators'
     if (path === '/data' || hash === 'data') return 'data'
     if (path === '/debate' || hash === 'debate') return 'debate'
+    if (path === '/polymarket' || hash === 'polymarket') return 'polymarket'
     if (path === '/tasks' || hash === 'tasks') return 'tasks'
     if (path === '/system-monitor' || hash === 'system') return 'system'
     if (path === '/audit-logs' || hash === 'audit') return 'audit'
@@ -95,19 +98,20 @@ function App() {
   const navigateToPage = (page: Page) => {
     console.log('[App] navigateToPage called with:', page)
     const pathMap: Record<Page, string> = {
-      'competition': '/competition',
-      'indicators': '/indicators',
-      'data': '/data',
-      'traders': '/traders',
-      'trader': '/dashboard',
-      'backtest': '/backtest',
-      'strategy': '/strategy',
-      'debate': '/debate',
-      'tasks': '/tasks',
-      'system': '/system-monitor',
-      'audit': '/audit-logs',
-      'login': '/login',
-      'register': '/register',
+      competition: '/competition',
+      indicators: '/indicators',
+      data: '/data',
+      traders: '/traders',
+      trader: '/dashboard',
+      backtest: '/backtest',
+      strategy: '/strategy',
+      debate: '/debate',
+      polymarket: '/polymarket',
+      tasks: '/tasks',
+      system: '/system-monitor',
+      audit: '/audit-logs',
+      login: '/login',
+      register: '/register',
     }
     const path = pathMap[page]
     if (path) {
@@ -123,7 +127,9 @@ function App() {
     // console.log('[App] Current page changed to:', currentPage)
   }, [currentPage])
   // 从 URL 参数读取初始 trader 标识（格式: name-id前4位）
-  const [selectedTraderSlug, setSelectedTraderSlug] = useState<string | undefined>(() => {
+  const [selectedTraderSlug, setSelectedTraderSlug] = useState<
+    string | undefined
+  >(() => {
     const params = new URLSearchParams(window.location.search)
     return params.get('trader') || undefined
   })
@@ -141,12 +147,12 @@ function App() {
     const lastDashIndex = slug.lastIndexOf('-')
     if (lastDashIndex === -1) {
       // 没有 dash，直接按 name 匹配
-      return traderList.find(t => t.trader_name === slug)
+      return traderList.find((t) => t.trader_name === slug)
     }
     const name = slug.slice(0, lastDashIndex)
     const idPrefix = slug.slice(lastDashIndex + 1)
-    return traderList.find(t =>
-      t.trader_name === name && t.trader_id.startsWith(idPrefix)
+    return traderList.find(
+      (t) => t.trader_name === name && t.trader_id.startsWith(idPrefix)
     )
   }
   const [lastUpdate, setLastUpdate] = useState<string>('--:--:--')
@@ -172,6 +178,8 @@ function App() {
         setCurrentPage('data')
       } else if (path === '/debate' || hash === 'debate') {
         setCurrentPage('debate')
+      } else if (path === '/polymarket' || hash === 'polymarket') {
+        setCurrentPage('polymarket')
       } else if (path === '/tasks' || hash === 'tasks') {
         setCurrentPage('tasks')
       } else if (path === '/system-monitor' || hash === 'system') {
@@ -291,7 +299,9 @@ function App() {
     currentPage === 'trader' && selectedTraderId
       ? `decisions/latest-${selectedTraderId}-${decisionsLimit}`
       : null,
-    api.getLatestDecisions ? () => api.getLatestDecisions(selectedTraderId, decisionsLimit) : null,
+    api.getLatestDecisions
+      ? () => api.getLatestDecisions(selectedTraderId, decisionsLimit)
+      : null,
     {
       refreshInterval: 30000, // 30秒刷新（决策更新频率较低）
       revalidateOnFocus: false,
@@ -373,16 +383,17 @@ function App() {
   if (route === '/data') {
     const dataPageNavigate = (page: Page) => {
       const pathMap: Record<string, string> = {
-        'data': '/data',
-        'competition': '/competition',
-        'indicators': '/indicators',
-        'traders': '/traders',
-        'trader': '/dashboard',
-        'backtest': '/backtest',
-        'strategy': '/strategy',
-        'debate': '/debate',
-        'tasks': '/tasks',
-        'system': '/system-monitor',
+        data: '/data',
+        competition: '/competition',
+        indicators: '/indicators',
+        traders: '/traders',
+        trader: '/dashboard',
+        backtest: '/backtest',
+        strategy: '/strategy',
+        debate: '/debate',
+        polymarket: '/polymarket',
+        tasks: '/tasks',
+        system: '/system-monitor',
       }
       const path = pathMap[page]
       if (path) {
@@ -472,6 +483,8 @@ function App() {
               <StrategyStudioPage />
             ) : currentPage === 'debate' ? (
               <DebateArenaPage />
+            ) : currentPage === 'polymarket' ? (
+              <PolymarketPage />
             ) : currentPage === 'tasks' ? (
               <TasksPage />
             ) : currentPage === 'system' ? (
@@ -496,7 +509,7 @@ function App() {
                 onTraderSelect={(traderId) => {
                   setSelectedTraderId(traderId)
                   // 更新 URL 参数（使用 slug: name-id前4位）
-                  const trader = traders?.find(t => t.trader_id === traderId)
+                  const trader = traders?.find((t) => t.trader_id === traderId)
                   if (trader) {
                     const url = new URL(window.location.href)
                     url.searchParams.set('trader', getTraderSlug(trader))
@@ -638,7 +651,6 @@ function App() {
     </div>
   )
 }
-
 
 // Wrap App with providers
 export default function AppWithProviders() {

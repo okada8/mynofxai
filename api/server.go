@@ -283,7 +283,7 @@ func (s *Server) setupRoutes() {
 			protected.GET("/debates/:id/stream", s.debateHandler.HandleDebateStream)
 
 			// Polymarket Routes
-			polymarketHandler := polymarket.NewHandler()
+			polymarketHandler := polymarket.NewHandler(s.store, s.traderManager)
 			polymarketGroup := protected.Group("/polymarket")
 			polymarketHandler.RegisterRoutes(polymarketGroup)
 
@@ -664,6 +664,7 @@ type SafeExchangeConfig struct {
 	AsterUser             string `json:"asterUser"`             // Aster username (not sensitive)
 	AsterSigner           string `json:"asterSigner"`           // Aster signer (not sensitive)
 	LighterWalletAddr     string `json:"lighterWalletAddr"`     // LIGHTER wallet address (not sensitive)
+	PolymarketWalletAddr  string `json:"polymarketWalletAddr"`  // Polymarket wallet address (not sensitive)
 }
 
 type UpdateModelConfigRequest struct {
@@ -691,6 +692,9 @@ type UpdateExchangeConfigRequest struct {
 		LighterPrivateKey       string `json:"lighter_private_key"`
 		LighterAPIKeyPrivateKey string `json:"lighter_api_key_private_key"`
 		LighterAPIKeyIndex      int    `json:"lighter_api_key_index"`
+		PolymarketWalletAddr    string `json:"polymarket_wallet_addr"`
+		PolymarketPrivateKey    string `json:"polymarket_private_key"`
+		PolymarketRPCURL        string `json:"polymarket_rpc_url"`
 	} `json:"exchanges"`
 }
 
@@ -2045,6 +2049,7 @@ func (s *Server) handleGetExchangeConfigs(c *gin.Context) {
 			AsterUser:             exchange.AsterUser,
 			AsterSigner:           exchange.AsterSigner,
 			LighterWalletAddr:     exchange.LighterWalletAddr,
+			PolymarketWalletAddr:  exchange.PolymarketWalletAddr,
 		}
 	}
 
@@ -2120,7 +2125,8 @@ func (s *Server) handleUpdateExchangeConfigs(c *gin.Context) {
 			tradersToReload[t.ID] = true
 		}
 
-		err := s.store.Exchange().Update(userID, exchangeID, exchangeData.Enabled, exchangeData.APIKey, exchangeData.SecretKey, exchangeData.Passphrase, exchangeData.Testnet, exchangeData.HyperliquidWalletAddr, exchangeData.HyperliquidUnifiedAcct, exchangeData.AsterUser, exchangeData.AsterSigner, exchangeData.AsterPrivateKey, exchangeData.LighterWalletAddr, exchangeData.LighterPrivateKey, exchangeData.LighterAPIKeyPrivateKey, exchangeData.LighterAPIKeyIndex)
+		err := s.store.Exchange().Update(userID, exchangeID, exchangeData.Enabled, exchangeData.APIKey, exchangeData.SecretKey, exchangeData.Passphrase, exchangeData.Testnet, exchangeData.HyperliquidWalletAddr, exchangeData.HyperliquidUnifiedAcct, exchangeData.AsterUser, exchangeData.AsterSigner, exchangeData.AsterPrivateKey, exchangeData.LighterWalletAddr, exchangeData.LighterPrivateKey, exchangeData.LighterAPIKeyPrivateKey, exchangeData.LighterAPIKeyIndex,
+			exchangeData.PolymarketWalletAddr, exchangeData.PolymarketPrivateKey, exchangeData.PolymarketRPCURL)
 		if err != nil {
 			SafeInternalError(c, fmt.Sprintf("Update exchange %s", exchangeID), err)
 			return
@@ -2163,6 +2169,9 @@ type CreateExchangeRequest struct {
 	LighterPrivateKey       string `json:"lighter_private_key"`
 	LighterAPIKeyPrivateKey string `json:"lighter_api_key_private_key"`
 	LighterAPIKeyIndex      int    `json:"lighter_api_key_index"`
+	PolymarketWalletAddr    string `json:"polymarket_wallet_addr"`
+	PolymarketPrivateKey    string `json:"polymarket_private_key"`
+	PolymarketRPCURL        string `json:"polymarket_rpc_url"`
 }
 
 // handleCreateExchange Create a new exchange account
@@ -2220,6 +2229,7 @@ func (s *Server) handleCreateExchange(c *gin.Context) {
 	validTypes := map[string]bool{
 		"binance": true, "bybit": true, "okx": true, "bitget": true,
 		"hyperliquid": true, "aster": true, "lighter": true, "gate": true, "kucoin": true,
+		"polymarket": true,
 	}
 	if !validTypes[req.ExchangeType] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid exchange type: %s", req.ExchangeType)})
@@ -2233,6 +2243,7 @@ func (s *Server) handleCreateExchange(c *gin.Context) {
 		req.HyperliquidWalletAddr, req.HyperliquidUnifiedAcct,
 		req.AsterUser, req.AsterSigner, req.AsterPrivateKey,
 		req.LighterWalletAddr, req.LighterPrivateKey, req.LighterAPIKeyPrivateKey, req.LighterAPIKeyIndex,
+		req.PolymarketWalletAddr, req.PolymarketPrivateKey, req.PolymarketRPCURL,
 	)
 	if err != nil {
 		logger.Infof("❌ Failed to create exchange account: %v", err)

@@ -31,12 +31,18 @@ export function MultiAgentEditor({
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
       multiAgentSystem: { zh: '多代理系统', en: 'Multi-Agent System' },
-      multiAgentDesc: { zh: '配置多个 AI Agent 协同工作，分工处理不同任务', en: 'Configure multiple AI Agents to collaborate on different tasks' },
+      multiAgentDesc: {
+        zh: '配置多个 AI Agent 协同工作，分工处理不同任务',
+        en: 'Configure multiple AI Agents to collaborate on different tasks',
+      },
       enableSystem: { zh: '启用多代理系统', en: 'Enable Multi-Agent System' },
       collaborationMode: { zh: '协作模式', en: 'Collaboration Mode' },
       debate: { zh: '辩论模式 (Debate)', en: 'Debate Mode' },
       consensus: { zh: '共识投票 (Consensus)', en: 'Consensus Voting' },
-      hierarchical: { zh: '层级管理 (Hierarchical)', en: 'Hierarchical Management' },
+      hierarchical: {
+        zh: '层级管理 (Hierarchical)',
+        en: 'Hierarchical Management',
+      },
       agentRoles: { zh: '代理角色配置', en: 'Agent Roles Configuration' },
       role: { zh: '角色', en: 'Role' },
       model: { zh: '模型', en: 'Model' },
@@ -80,8 +86,14 @@ export function MultiAgentEditor({
         </p>
 
         {/* Enable Toggle */}
-        <div className="mb-4 p-4 rounded-lg" style={{ background: '#0B0E11', border: '1px solid #2B3139' }}>
-          <label className="flex items-center gap-2 text-sm font-medium cursor-pointer" style={{ color: '#EAECEF' }}>
+        <div
+          className="mb-4 p-4 rounded-lg"
+          style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+        >
+          <label
+            className="flex items-center gap-2 text-sm font-medium cursor-pointer"
+            style={{ color: '#EAECEF' }}
+          >
             <input
               type="checkbox"
               checked={safeConfig.enabled}
@@ -96,31 +108,42 @@ export function MultiAgentEditor({
         {safeConfig.enabled && (
           <div className="space-y-4">
             {/* Mode Selection */}
-            <div className="p-4 rounded-lg" style={{ background: '#0B0E11', border: '1px solid #2B3139' }}>
-              <label className="block text-xs mb-2" style={{ color: '#848E9C' }}>
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+            >
+              <label
+                className="block text-xs mb-2"
+                style={{ color: '#848E9C' }}
+              >
                 {t('collaborationMode')}
               </label>
               <div className="flex gap-2">
-                {(['debate', 'consensus', 'hierarchical'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => updateField('mode', mode)}
-                    disabled={disabled}
-                    className={`flex-1 py-2 px-3 rounded text-xs transition-colors ${
-                      safeConfig.mode === mode
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
-                  >
-                    {t(mode)}
-                  </button>
-                ))}
+                {(['debate', 'consensus', 'hierarchical'] as const).map(
+                  (mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => updateField('mode', mode)}
+                      disabled={disabled}
+                      className={`flex-1 py-2 px-3 rounded text-xs transition-colors ${
+                        safeConfig.mode === mode
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                      }`}
+                    >
+                      {t(mode)}
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
             {/* Agent Configuration */}
             <div className="space-y-2">
-              <h4 className="text-xs font-medium mb-2" style={{ color: '#EAECEF' }}>
+              <h4
+                className="text-xs font-medium mb-2"
+                style={{ color: '#EAECEF' }}
+              >
                 {t('agentRoles')}
               </h4>
               {safeConfig.agents.map((agent, index) => (
@@ -138,7 +161,9 @@ export function MultiAgentEditor({
 
                   <select
                     value={agent.model_id}
-                    onChange={(e) => updateAgent(index, 'model_id', e.target.value)}
+                    onChange={(e) =>
+                      updateAgent(index, 'model_id', e.target.value)
+                    }
                     disabled={disabled || !agent.enabled}
                     className="flex-1 px-2 py-1.5 rounded text-xs bg-[#1E2329] border border-[#2B3139] text-[#EAECEF] outline-none focus:border-purple-500"
                   >
@@ -154,11 +179,15 @@ export function MultiAgentEditor({
                     <input
                       type="checkbox"
                       checked={agent.enabled}
-                      onChange={(e) => updateAgent(index, 'enabled', e.target.checked)}
+                      onChange={(e) =>
+                        updateAgent(index, 'enabled', e.target.checked)
+                      }
                       disabled={disabled}
                       className="w-4 h-4 rounded border-gray-600 bg-transparent text-purple-500 focus:ring-offset-0 focus:ring-0"
                     />
-                    <span className="text-xs text-gray-400">{agent.enabled ? 'ON' : 'OFF'}</span>
+                    <span className="text-xs text-gray-400">
+                      {agent.enabled ? 'ON' : 'OFF'}
+                    </span>
                   </label>
                 </div>
               ))}

@@ -152,7 +152,7 @@ type Decision struct {
 	// Grid actions: "place_buy_limit", "place_sell_limit", "cancel_order", "cancel_all_orders", "pause_grid", "resume_grid", "adjust_grid"
 
 	// Opening position parameters
-	Leverage        int     `json:"leverage,omitempty"`
+	Leverage        float64 `json:"leverage,omitempty"`
 	PositionSizeUSD float64 `json:"position_size_usd,omitempty"`
 	StopLoss        float64 `json:"stop_loss,omitempty"`
 	TakeProfit      float64 `json:"take_profit,omitempty"`
@@ -216,9 +216,10 @@ type OIDeltaData struct {
 
 // StrategyEngine strategy execution engine
 type StrategyEngine struct {
-	config        *store.StrategyConfig
-	nofxosClient  *nofxos.Client
-	coinankClient *coinank.CoinankClient
+	config           *store.StrategyConfig
+	nofxosClient     *nofxos.Client
+	coinankClient    *coinank.CoinankClient
+	polymarketEngine *PolymarketStrategyEngine
 }
 
 // NewStrategyEngine creates strategy execution engine
@@ -234,10 +235,17 @@ func NewStrategyEngine(strategyConfig *store.StrategyConfig) *StrategyEngine {
 	coinankAPIKey := config.Get().CoinAnkAPIKey
 	coinankClient := coinank.NewCoinankClient(coinank.MainApiUrl, coinankAPIKey)
 
+	// Create Polymarket Engine if config exists
+	var polyEngine *PolymarketStrategyEngine
+	if strategyConfig.PolymarketConfig != nil {
+		polyEngine = NewPolymarketStrategyEngine(strategyConfig.PolymarketConfig)
+	}
+
 	return &StrategyEngine{
-		config:        strategyConfig,
-		nofxosClient:  client,
-		coinankClient: coinankClient,
+		config:           strategyConfig,
+		nofxosClient:     client,
+		coinankClient:    coinankClient,
+		polymarketEngine: polyEngine,
 	}
 }
 
@@ -264,6 +272,19 @@ func (e *StrategyEngine) GetConfig() *store.StrategyConfig {
 	return e.config
 }
 
+// IsPolymarketStrategy checks if the current strategy is a Polymarket hybrid strategy
+func (e *StrategyEngine) IsPolymarketStrategy() bool {
+	return e.config.StrategyType == "polymarket_hybrid"
+}
+
+// GetPolymarketDecision executes Polymarket strategy
+func (e *StrategyEngine) GetPolymarketDecision(market *MarketData) *PolymarketDecision {
+	if e.polymarketEngine == nil {
+		return &PolymarketDecision{Action: "HOLD", Reasoning: "Polymarket engine not initialized (missing PolymarketConfig)"}
+	}
+	return e.polymarketEngine.Execute(market)
+}
+
 // ============================================================================
 // Entry Functions - Main API
 // ============================================================================
@@ -284,6 +305,11 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if engine == nil {
 		defaultConfig := store.GetDefaultStrategyConfig("en")
 		engine = NewStrategyEngine(&defaultConfig)
+	}
+
+	// 0. Check if this is a Polymarket strategy (should use GetPolymarketDecision instead)
+	if engine.IsPolymarketStrategy() {
+		return nil, fmt.Errorf("strategy type 'polymarket_hybrid' requires GetPolymarketDecision(), not GetFullDecisionWithStrategy()")
 	}
 
 	// 1. Fetch market data using strategy config
@@ -2242,12 +2268,12 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 		}
 
 		if d.Leverage <= 0 {
-			return fmt.Errorf("leverage must be greater than 0: %d", d.Leverage)
+			return fmt.Errorf("leverage must be greater than 0: %.2f", d.Leverage)
 		}
-		if float64(d.Leverage) > maxLeverage {
-			logger.Infof("⚠️  [Leverage Fallback] %s leverage exceeded (%dx > %.1fx), auto-adjusting to limit %.1fx",
+		if d.Leverage > maxLeverage {
+			logger.Infof("⚠️  [Leverage Fallback] %s leverage exceeded (%.1fx > %.1fx), auto-adjusting to limit %.1fx",
 				d.Symbol, d.Leverage, maxLeverage, maxLeverage)
-			d.Leverage = int(maxLeverage)
+			d.Leverage = maxLeverage
 		}
 		if d.PositionSizeUSD <= 0 {
 			return fmt.Errorf("position size must be greater than 0: %.2f", d.PositionSizeUSD)

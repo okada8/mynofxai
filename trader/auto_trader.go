@@ -83,6 +83,9 @@ type AutoTraderConfig struct {
 	PolymarketPrivateKey string
 	PolymarketRPCURL     string
 	PolymarketWalletAddr string
+	PolymarketAPIKey     string
+	PolymarketSecretKey  string
+	PolymarketPassphrase string
 
 	// Aster configuration
 	AsterUser       string // Aster main wallet address
@@ -314,7 +317,7 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		trader = indodax.NewIndodaxTrader(config.IndodaxAPIKey, config.IndodaxSecretKey)
 	case "polymarket":
 		logger.Infof("🔮 [%s] Using Polymarket prediction trading", config.Name)
-		trader, err = polymarket.NewPolymarketTrader(config.PolymarketPrivateKey, config.PolymarketWalletAddr, config.PolymarketRPCURL)
+		trader, err = polymarket.NewPolymarketTrader(config.PolymarketPrivateKey, config.PolymarketWalletAddr, config.PolymarketRPCURL, config.PolymarketAPIKey, config.PolymarketSecretKey, config.PolymarketPassphrase)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Polymarket trader: %w", err)
 		}
@@ -797,7 +800,7 @@ func (at *AutoTrader) runCycle() error {
 			Action:     d.Action,
 			Symbol:     d.Symbol,
 			Quantity:   0,
-			Leverage:   d.Leverage,
+			Leverage:   int(d.Leverage),
 			Price:      0,
 			StopLoss:   d.StopLoss,
 			TakeProfit: d.TakeProfit,
@@ -1164,7 +1167,7 @@ func (at *AutoTrader) ExecuteDecision(d *kernel.Decision) error {
 	actionRecord := &store.DecisionAction{
 		Symbol:     d.Symbol,
 		Action:     d.Action,
-		Leverage:   d.Leverage,
+		Leverage:   int(d.Leverage),
 		StopLoss:   d.StopLoss,
 		TakeProfit: d.TakeProfit,
 		Confidence: d.Confidence,
@@ -1309,7 +1312,7 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	}
 
 	// Open position
-	order, err := at.trader.OpenLong(decision.Symbol, quantity, decision.Leverage)
+	order, err := at.trader.OpenLong(decision.Symbol, quantity, int(decision.Leverage))
 	if err != nil {
 		return err
 	}
@@ -1322,7 +1325,7 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
-	at.recordAndConfirmOrder(order, decision.Symbol, "open_long", quantity, marketData.CurrentPrice, decision.Leverage, 0)
+	at.recordAndConfirmOrder(order, decision.Symbol, "open_long", quantity, marketData.CurrentPrice, int(decision.Leverage), 0)
 
 	// Record position opening time
 	posKey := decision.Symbol + "_long"
@@ -1465,7 +1468,7 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 	}
 
 	// Open position
-	order, err := at.trader.OpenShort(decision.Symbol, quantity, decision.Leverage)
+	order, err := at.trader.OpenShort(decision.Symbol, quantity, int(decision.Leverage))
 	if err != nil {
 		return err
 	}
@@ -1478,7 +1481,7 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
-	at.recordAndConfirmOrder(order, decision.Symbol, "open_short", quantity, marketData.CurrentPrice, decision.Leverage, 0)
+	at.recordAndConfirmOrder(order, decision.Symbol, "open_short", quantity, marketData.CurrentPrice, int(decision.Leverage), 0)
 
 	// Record position opening time
 	posKey := decision.Symbol + "_short"

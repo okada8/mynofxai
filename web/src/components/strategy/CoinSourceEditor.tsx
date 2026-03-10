@@ -1,5 +1,22 @@
 import { useState } from 'react'
-import { Plus, X, Database, TrendingUp, TrendingDown, List, Ban, Zap, Shuffle, Scan, Activity, BarChart2, Globe, Layers, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import {
+  Plus,
+  X,
+  Database,
+  TrendingUp,
+  TrendingDown,
+  List,
+  Ban,
+  Zap,
+  Shuffle,
+  Scan,
+  Activity,
+  BarChart2,
+  Globe,
+  Layers,
+  ArrowUpRight,
+  ArrowDownRight,
+} from 'lucide-react'
 import type { CoinSourceConfig } from '../../types'
 
 interface CoinSourceEditorProps {
@@ -50,7 +67,10 @@ export function CoinSourceEditor({
       oi: { zh: '持仓变化', en: 'OI Change' },
       price: { zh: '价格变化', en: 'Price Change' },
       vol: { zh: '成交量变化', en: 'Volume Change' },
-      staticDesc: { zh: '手动指定交易币种列表', en: 'Manually specify trading coins' },
+      staticDesc: {
+        zh: '手动指定交易币种列表',
+        en: 'Manually specify trading coins',
+      },
       ai500Desc: {
         zh: '使用 AI500 智能筛选的热门币种',
         en: 'Use AI500 smart-filtered popular coins',
@@ -75,16 +95,25 @@ export function CoinSourceEditor({
         zh: '宏观驱动的动态币种池',
         en: 'Macro-driven dynamic coin pool',
       },
-      mixedConfig: { zh: '组合数据源配置', en: 'Combined Sources Configuration' },
+      mixedConfig: {
+        zh: '组合数据源配置',
+        en: 'Combined Sources Configuration',
+      },
       mixedSummary: { zh: '已选组合', en: 'Selected Sources' },
       maxCoins: { zh: '最多', en: 'Up to' },
       coins: { zh: '个币种', en: 'coins' },
       dataSourceConfig: { zh: '数据源配置', en: 'Data Source Configuration' },
       excludedCoins: { zh: '排除币种', en: 'Excluded Coins' },
-      excludedCoinsDesc: { zh: '这些币种将从所有数据源中排除，不会被交易', en: 'These coins will be excluded from all sources and will not be traded' },
+      excludedCoinsDesc: {
+        zh: '这些币种将从所有数据源中排除，不会被交易',
+        en: 'These coins will be excluded from all sources and will not be traded',
+      },
       addExcludedCoin: { zh: '添加排除', en: 'Add Excluded' },
       onlyBinanceSymbols: { zh: '仅限币安交易对', en: 'Only Binance Symbols' },
-      nofxosNote: { zh: '使用 NofxOS API Key（在指标配置中设置）', en: 'Uses NofxOS API Key (set in Indicators config)' },
+      nofxosNote: {
+        zh: '使用 NofxOS API Key（在指标配置中设置）',
+        en: 'Uses NofxOS API Key (set in Indicators config)',
+      },
     }
     return translations[key]?.[language] || key
   }
@@ -109,23 +138,33 @@ export function CoinSourceEditor({
       totalLimit += config.ai500_limit || 10
     }
     if (config.use_oi_top) {
-      sources.push(`${language === 'zh' ? 'OI增' : 'OI↑'}(${config.oi_top_limit || 10})`)
+      sources.push(
+        `${language === 'zh' ? 'OI增' : 'OI↑'}(${config.oi_top_limit || 10})`
+      )
       totalLimit += config.oi_top_limit || 10
     }
     if (config.use_oi_low) {
-      sources.push(`${language === 'zh' ? 'OI减' : 'OI↓'}(${config.oi_low_limit || 10})`)
+      sources.push(
+        `${language === 'zh' ? 'OI减' : 'OI↓'}(${config.oi_low_limit || 10})`
+      )
       totalLimit += config.oi_low_limit || 10
     }
     if (config.use_screener) {
-      sources.push(`${language === 'zh' ? '筛选器' : 'Screener'}(${config.screener_limit || 10}/${config.screener_duration || '1h'}/${config.screener_sort_by || 'oi'})`)
+      sources.push(
+        `${language === 'zh' ? '筛选器' : 'Screener'}(${config.screener_limit || 10}/${config.screener_duration || '1h'}/${config.screener_sort_by || 'oi'})`
+      )
       totalLimit += config.screener_limit || 10
     }
     if (config.use_gainers_losers) {
-      sources.push(`${language === 'zh' ? '涨跌榜' : 'G/L'}(+${config.gainers_top || 4}/-${config.losers_top || 4})`)
+      sources.push(
+        `${language === 'zh' ? '涨跌榜' : 'G/L'}(+${config.gainers_top || 4}/-${config.losers_top || 4})`
+      )
       totalLimit += (config.gainers_top || 4) + (config.losers_top || 4)
     }
     if ((config.static_coins || []).length > 0) {
-      sources.push(`${language === 'zh' ? '自定义' : 'Custom'}(${config.static_coins?.length || 0})`)
+      sources.push(
+        `${language === 'zh' ? '自定义' : 'Custom'}(${config.static_coins?.length || 0})`
+      )
       totalLimit += config.static_coins?.length || 0
     }
 
@@ -135,19 +174,44 @@ export function CoinSourceEditor({
   // xyz dex assets (stocks, forex, commodities) - should NOT get USDT suffix
   const xyzDexAssets = new Set([
     // Stocks
-    'TSLA', 'NVDA', 'AAPL', 'MSFT', 'META', 'AMZN', 'GOOGL', 'AMD', 'COIN', 'NFLX',
-    'PLTR', 'HOOD', 'INTC', 'MSTR', 'TSM', 'ORCL', 'MU', 'RIVN', 'COST', 'LLY',
-    'CRCL', 'SKHX', 'SNDK',
+    'TSLA',
+    'NVDA',
+    'AAPL',
+    'MSFT',
+    'META',
+    'AMZN',
+    'GOOGL',
+    'AMD',
+    'COIN',
+    'NFLX',
+    'PLTR',
+    'HOOD',
+    'INTC',
+    'MSTR',
+    'TSM',
+    'ORCL',
+    'MU',
+    'RIVN',
+    'COST',
+    'LLY',
+    'CRCL',
+    'SKHX',
+    'SNDK',
     // Forex
-    'EUR', 'JPY',
+    'EUR',
+    'JPY',
     // Commodities
-    'GOLD', 'SILVER',
+    'GOLD',
+    'SILVER',
     // Index
     'XYZ100',
   ])
 
   const isXyzDexAsset = (symbol: string): boolean => {
-    const base = symbol.toUpperCase().replace(/^XYZ:/, '').replace(/USDT$|USD$|-USDC$/, '')
+    const base = symbol
+      .toUpperCase()
+      .replace(/^XYZ:/, '')
+      .replace(/USDT$|USD$|-USDC$/, '')
     return xyzDexAssets.has(base)
   }
 
@@ -159,7 +223,9 @@ export function CoinSourceEditor({
     let formattedSymbol: string
     if (isXyzDexAsset(symbol)) {
       // Remove xyz: prefix (case-insensitive) and any USD suffixes
-      const base = symbol.replace(/^xyz:/i, '').replace(/USDT$|USD$|-USDC$/i, '')
+      const base = symbol
+        .replace(/^xyz:/i, '')
+        .replace(/USDT$|USD$|-USDC$/i, '')
       formattedSymbol = `xyz:${base}`
     } else {
       formattedSymbol = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`
@@ -189,7 +255,9 @@ export function CoinSourceEditor({
     // For xyz dex assets, use xyz: prefix without USDT
     let formattedSymbol: string
     if (isXyzDexAsset(symbol)) {
-      const base = symbol.replace(/^xyz:/i, '').replace(/USDT$|USD$|-USDC$/i, '')
+      const base = symbol
+        .replace(/^xyz:/i, '')
+        .replace(/USDT$|USD$|-USDC$/i, '')
       formattedSymbol = `xyz:${base}`
     } else {
       formattedSymbol = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`
@@ -214,9 +282,7 @@ export function CoinSourceEditor({
 
   // NofxOS badge component
   const NofxOSBadge = () => (
-    <span
-      className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30"
-    >
+    <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
       NofxOS
     </span>
   )
@@ -234,13 +300,17 @@ export function CoinSourceEditor({
               key={value}
               onClick={() =>
                 !disabled &&
-                onChange({ ...config, source_type: value as CoinSourceConfig['source_type'] })
+                onChange({
+                  ...config,
+                  source_type: value as CoinSourceConfig['source_type'],
+                })
               }
               disabled={disabled}
-              className={`p-4 rounded-lg border transition-all ${config.source_type === value
-                ? 'ring-2 ring-nofx-gold bg-nofx-gold/10'
-                : 'hover:bg-white/5 bg-nofx-bg'
-                } border-nofx-gold/20`}
+              className={`p-4 rounded-lg border transition-all ${
+                config.source_type === value
+                  ? 'ring-2 ring-nofx-gold bg-nofx-gold/10'
+                  : 'hover:bg-white/5 bg-nofx-bg'
+              } border-nofx-gold/20`}
             >
               <Icon className="w-6 h-6 mx-auto mb-2" style={{ color }} />
               <div className="text-sm font-medium text-nofx-text">
@@ -306,11 +376,16 @@ export function CoinSourceEditor({
           <input
             type="checkbox"
             checked={config.only_binance_symbols ?? true}
-            onChange={(e) => !disabled && onChange({ ...config, only_binance_symbols: e.target.checked })}
+            onChange={(e) =>
+              !disabled &&
+              onChange({ ...config, only_binance_symbols: e.target.checked })
+            }
             disabled={disabled}
             className="w-4 h-4 rounded accent-nofx-gold"
           />
-          <span className="text-sm font-medium text-nofx-text">{t('onlyBinanceSymbols')}</span>
+          <span className="text-sm font-medium text-nofx-text">
+            {t('onlyBinanceSymbols')}
+          </span>
         </label>
       </div>
 
@@ -371,9 +446,7 @@ export function CoinSourceEditor({
 
       {/* AI500 Options - only for ai500 mode */}
       {config.source_type === 'ai500' && (
-        <div
-          className="p-4 rounded-lg bg-nofx-gold/5 border border-nofx-gold/20"
-        >
+        <div className="p-4 rounded-lg bg-nofx-gold/5 border border-nofx-gold/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-nofx-gold" />
@@ -390,7 +463,8 @@ export function CoinSourceEditor({
                 type="checkbox"
                 checked={config.use_ai500}
                 onChange={(e) =>
-                  !disabled && onChange({ ...config, use_ai500: e.target.checked })
+                  !disabled &&
+                  onChange({ ...config, use_ai500: e.target.checked })
                 }
                 disabled={disabled}
                 className="w-5 h-5 rounded accent-nofx-gold"
@@ -407,13 +481,18 @@ export function CoinSourceEditor({
                   value={config.ai500_limit || 10}
                   onChange={(e) =>
                     !disabled &&
-                    onChange({ ...config, ai500_limit: parseInt(e.target.value) || 10 })
+                    onChange({
+                      ...config,
+                      ai500_limit: parseInt(e.target.value) || 10,
+                    })
                   }
                   disabled={disabled}
                   className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                 >
-                  {[5, 10, 15, 20, 30, 50].map(n => (
-                    <option key={n} value={n}>{n}</option>
+                  {[5, 10, 15, 20, 30, 50].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -428,14 +507,13 @@ export function CoinSourceEditor({
 
       {/* OI Top Options - only for oi_top mode */}
       {config.source_type === 'oi_top' && (
-        <div
-          className="p-4 rounded-lg bg-nofx-success/5 border border-nofx-success/20"
-        >
+        <div className="p-4 rounded-lg bg-nofx-success/5 border border-nofx-success/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-nofx-success" />
               <span className="text-sm font-medium text-nofx-text">
-                OI {language === 'zh' ? '持仓增加榜' : 'Increase'} {t('dataSourceConfig')}
+                OI {language === 'zh' ? '持仓增加榜' : 'Increase'}{' '}
+                {t('dataSourceConfig')}
               </span>
               <NofxOSBadge />
             </div>
@@ -447,7 +525,8 @@ export function CoinSourceEditor({
                 type="checkbox"
                 checked={config.use_oi_top}
                 onChange={(e) =>
-                  !disabled && onChange({ ...config, use_oi_top: e.target.checked })
+                  !disabled &&
+                  onChange({ ...config, use_oi_top: e.target.checked })
                 }
                 disabled={disabled}
                 className="w-5 h-5 rounded accent-nofx-success"
@@ -464,13 +543,18 @@ export function CoinSourceEditor({
                   value={config.oi_top_limit || 10}
                   onChange={(e) =>
                     !disabled &&
-                    onChange({ ...config, oi_top_limit: parseInt(e.target.value) || 10 })
+                    onChange({
+                      ...config,
+                      oi_top_limit: parseInt(e.target.value) || 10,
+                    })
                   }
                   disabled={disabled}
                   className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                 >
-                  {[5, 10, 15, 20, 30, 50].map(n => (
-                    <option key={n} value={n}>{n}</option>
+                  {[5, 10, 15, 20, 30, 50].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -485,14 +569,13 @@ export function CoinSourceEditor({
 
       {/* OI Low Options - only for oi_low mode */}
       {config.source_type === 'oi_low' && (
-        <div
-          className="p-4 rounded-lg bg-nofx-danger/5 border border-nofx-danger/20"
-        >
+        <div className="p-4 rounded-lg bg-nofx-danger/5 border border-nofx-danger/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <TrendingDown className="w-4 h-4 text-nofx-danger" />
               <span className="text-sm font-medium text-nofx-text">
-                OI {language === 'zh' ? '持仓减少榜' : 'Decrease'} {t('dataSourceConfig')}
+                OI {language === 'zh' ? '持仓减少榜' : 'Decrease'}{' '}
+                {t('dataSourceConfig')}
               </span>
               <NofxOSBadge />
             </div>
@@ -504,7 +587,8 @@ export function CoinSourceEditor({
                 type="checkbox"
                 checked={config.use_oi_low}
                 onChange={(e) =>
-                  !disabled && onChange({ ...config, use_oi_low: e.target.checked })
+                  !disabled &&
+                  onChange({ ...config, use_oi_low: e.target.checked })
                 }
                 disabled={disabled}
                 className="w-5 h-5 rounded accent-red-500"
@@ -521,13 +605,18 @@ export function CoinSourceEditor({
                   value={config.oi_low_limit || 10}
                   onChange={(e) =>
                     !disabled &&
-                    onChange({ ...config, oi_low_limit: parseInt(e.target.value) || 10 })
+                    onChange({
+                      ...config,
+                      oi_low_limit: parseInt(e.target.value) || 10,
+                    })
                   }
                   disabled={disabled}
                   className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                 >
-                  {[5, 10, 15, 20, 30, 50].map(n => (
-                    <option key={n} value={n}>{n}</option>
+                  {[5, 10, 15, 20, 30, 50].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -542,9 +631,7 @@ export function CoinSourceEditor({
 
       {/* Screener Options - only for screener mode */}
       {config.source_type === 'screener' && (
-        <div
-          className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20"
-        >
+        <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Scan className="w-4 h-4 text-purple-500" />
@@ -561,7 +648,8 @@ export function CoinSourceEditor({
                 type="checkbox"
                 checked={config.use_screener}
                 onChange={(e) =>
-                  !disabled && onChange({ ...config, use_screener: e.target.checked })
+                  !disabled &&
+                  onChange({ ...config, use_screener: e.target.checked })
                 }
                 disabled={disabled}
                 className="w-5 h-5 rounded accent-purple-500"
@@ -579,13 +667,18 @@ export function CoinSourceEditor({
                     value={config.screener_limit || 10}
                     onChange={(e) =>
                       !disabled &&
-                      onChange({ ...config, screener_limit: parseInt(e.target.value) || 10 })
+                      onChange({
+                        ...config,
+                        screener_limit: parseInt(e.target.value) || 10,
+                      })
                     }
                     disabled={disabled}
                     className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                   >
-                    {[5, 10, 15, 20, 30, 50].map(n => (
-                      <option key={n} value={n}>{n}</option>
+                    {[5, 10, 15, 20, 30, 50].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -595,7 +688,7 @@ export function CoinSourceEditor({
                     {t('screenerDuration')}:
                   </span>
                   <select
-                    value={config.screener_duration || "1h"}
+                    value={config.screener_duration || '1h'}
                     onChange={(e) =>
                       !disabled &&
                       onChange({ ...config, screener_duration: e.target.value })
@@ -603,8 +696,10 @@ export function CoinSourceEditor({
                     disabled={disabled}
                     className="px-3 py-1.5 rounded bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                   >
-                    {["5m", "15m", "30m", "1h", "4h"].map(d => (
-                      <option key={d} value={d}>{d}</option>
+                    {['5m', '15m', '30m', '1h', '4h'].map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -614,7 +709,7 @@ export function CoinSourceEditor({
                     {t('screenerSortBy')}:
                   </span>
                   <select
-                    value={config.screener_sort_by || "oi"}
+                    value={config.screener_sort_by || 'oi'}
                     onChange={(e) =>
                       !disabled &&
                       onChange({ ...config, screener_sort_by: e.target.value })
@@ -638,12 +733,15 @@ export function CoinSourceEditor({
       )}
 
       {/* Mixed Mode & Dynamic Macro - Unified Card Selector */}
-      {(config.source_type === 'mixed' || config.source_type === 'dynamic_macro') && (
-        <div className={`p-4 rounded-lg border ${
-          config.source_type === 'dynamic_macro'
-            ? 'bg-amber-500/5 border-amber-500/20'
-            : 'bg-blue-500/5 border-blue-500/20'
-        }`}>
+      {(config.source_type === 'mixed' ||
+        config.source_type === 'dynamic_macro') && (
+        <div
+          className={`p-4 rounded-lg border ${
+            config.source_type === 'dynamic_macro'
+              ? 'bg-amber-500/5 border-amber-500/20'
+              : 'bg-blue-500/5 border-blue-500/20'
+          }`}
+        >
           <div className="flex items-center gap-2 mb-4">
             {config.source_type === 'dynamic_macro' ? (
               <Globe className="w-4 h-4 text-amber-500" />
@@ -651,7 +749,9 @@ export function CoinSourceEditor({
               <Shuffle className="w-4 h-4 text-blue-400" />
             )}
             <span className="text-sm font-medium text-nofx-text">
-              {config.source_type === 'dynamic_macro' ? t('dynamic_macro') : t('mixedConfig')}
+              {config.source_type === 'dynamic_macro'
+                ? t('dynamic_macro')
+                : t('mixedConfig')}
             </span>
           </div>
 
@@ -661,28 +761,42 @@ export function CoinSourceEditor({
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-medium text-nofx-text">{t('macroScreening')}</span>
+                  <span className="text-sm font-medium text-nofx-text">
+                    {t('macroScreening')}
+                  </span>
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={config.macro_screening?.enable_macro_filter ?? false}
-                    onChange={(e) => !disabled && onChange({
-                      ...config,
-                      macro_screening: {
-                        ...(config.macro_screening || { max_sector_exposure: 0.4, sector_allocation: {} }),
-                        enable_macro_filter: e.target.checked
-                      }
-                    })}
+                    checked={
+                      config.macro_screening?.enable_macro_filter ?? false
+                    }
+                    onChange={(e) =>
+                      !disabled &&
+                      onChange({
+                        ...config,
+                        macro_screening: {
+                          ...(config.macro_screening || {
+                            max_sector_exposure: 0.4,
+                            sector_allocation: {},
+                          }),
+                          enable_macro_filter: e.target.checked,
+                        },
+                      })
+                    }
                     disabled={disabled}
                     className="w-4 h-4 rounded accent-amber-500"
                   />
-                  <span className="text-xs text-nofx-text-muted">{t('enableMacroFilter')}</span>
+                  <span className="text-xs text-nofx-text-muted">
+                    {t('enableMacroFilter')}
+                  </span>
                 </label>
               </div>
               {config.macro_screening?.enable_macro_filter && (
                 <div className="flex items-center gap-3 pl-6">
-                  <span className="text-xs text-nofx-text-muted">{t('maxSectorExposure')}:</span>
+                  <span className="text-xs text-nofx-text-muted">
+                    {t('maxSectorExposure')}:
+                  </span>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -690,18 +804,26 @@ export function CoinSourceEditor({
                       min="0.1"
                       max="1.0"
                       value={config.macro_screening?.max_sector_exposure || 0.4}
-                      onChange={(e) => !disabled && onChange({
-                        ...config,
-                        macro_screening: {
-                          ...config.macro_screening!,
-                          max_sector_exposure: parseFloat(e.target.value)
-                        }
-                      })}
+                      onChange={(e) =>
+                        !disabled &&
+                        onChange({
+                          ...config,
+                          macro_screening: {
+                            ...config.macro_screening!,
+                            max_sector_exposure: parseFloat(e.target.value),
+                          },
+                        })
+                      }
                       disabled={disabled}
                       className="w-16 px-2 py-1 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                     />
                     <span className="text-xs text-nofx-text-muted">
-                      ({Math.round((config.macro_screening?.max_sector_exposure || 0.4) * 100)}%)
+                      (
+                      {Math.round(
+                        (config.macro_screening?.max_sector_exposure || 0.4) *
+                          100
+                      )}
+                      %)
                     </span>
                   </div>
                 </div>
@@ -717,19 +839,27 @@ export function CoinSourceEditor({
                   ? 'bg-nofx-gold/10 border-nofx-gold/50'
                   : 'bg-nofx-bg border-nofx-border hover:border-nofx-gold/30'
               }`}
-              onClick={() => !disabled && onChange({ ...config, use_ai500: !config.use_ai500 })}
+              onClick={() =>
+                !disabled &&
+                onChange({ ...config, use_ai500: !config.use_ai500 })
+              }
             >
               <div className="flex items-center gap-2 mb-2">
                 <input
                   type="checkbox"
                   checked={config.use_ai500}
-                  onChange={(e) => !disabled && onChange({ ...config, use_ai500: e.target.checked })}
+                  onChange={(e) =>
+                    !disabled &&
+                    onChange({ ...config, use_ai500: e.target.checked })
+                  }
                   disabled={disabled}
                   className="w-4 h-4 rounded accent-nofx-gold"
                   onClick={(e) => e.stopPropagation()}
                 />
                 <Database className="w-4 h-4 text-nofx-gold" />
-                <span className="text-sm font-medium text-nofx-text">AI500</span>
+                <span className="text-sm font-medium text-nofx-text">
+                  AI500
+                </span>
                 <NofxOSBadge />
               </div>
               {config.use_ai500 && (
@@ -739,14 +869,20 @@ export function CoinSourceEditor({
                     value={config.ai500_limit || 10}
                     onChange={(e) => {
                       e.stopPropagation()
-                      !disabled && onChange({ ...config, ai500_limit: parseInt(e.target.value) || 10 })
+                      !disabled &&
+                        onChange({
+                          ...config,
+                          ai500_limit: parseInt(e.target.value) || 10,
+                        })
                     }}
                     disabled={disabled}
                     className="px-2 py-1 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {[5, 10, 15, 20, 30, 50].map(n => (
-                      <option key={n} value={n}>{n}</option>
+                    {[5, 10, 15, 20, 30, 50].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -760,13 +896,19 @@ export function CoinSourceEditor({
                   ? 'bg-nofx-success/10 border-nofx-success/50'
                   : 'bg-nofx-bg border-nofx-border hover:border-nofx-success/30'
               }`}
-              onClick={() => !disabled && onChange({ ...config, use_oi_top: !config.use_oi_top })}
+              onClick={() =>
+                !disabled &&
+                onChange({ ...config, use_oi_top: !config.use_oi_top })
+              }
             >
               <div className="flex items-center gap-2 mb-2">
                 <input
                   type="checkbox"
                   checked={config.use_oi_top}
-                  onChange={(e) => !disabled && onChange({ ...config, use_oi_top: e.target.checked })}
+                  onChange={(e) =>
+                    !disabled &&
+                    onChange({ ...config, use_oi_top: e.target.checked })
+                  }
                   disabled={disabled}
                   className="w-4 h-4 rounded accent-nofx-success"
                   onClick={(e) => e.stopPropagation()}
@@ -786,14 +928,20 @@ export function CoinSourceEditor({
                     value={config.oi_top_limit || 10}
                     onChange={(e) => {
                       e.stopPropagation()
-                      !disabled && onChange({ ...config, oi_top_limit: parseInt(e.target.value) || 10 })
+                      !disabled &&
+                        onChange({
+                          ...config,
+                          oi_top_limit: parseInt(e.target.value) || 10,
+                        })
                     }}
                     disabled={disabled}
                     className="px-2 py-1 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {[5, 10, 15, 20, 30, 50].map(n => (
-                      <option key={n} value={n}>{n}</option>
+                    {[5, 10, 15, 20, 30, 50].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -807,13 +955,19 @@ export function CoinSourceEditor({
                   ? 'bg-nofx-danger/10 border-nofx-danger/50'
                   : 'bg-nofx-bg border-nofx-border hover:border-nofx-danger/30'
               }`}
-              onClick={() => !disabled && onChange({ ...config, use_oi_low: !config.use_oi_low })}
+              onClick={() =>
+                !disabled &&
+                onChange({ ...config, use_oi_low: !config.use_oi_low })
+              }
             >
               <div className="flex items-center gap-2 mb-2">
                 <input
                   type="checkbox"
                   checked={config.use_oi_low}
-                  onChange={(e) => !disabled && onChange({ ...config, use_oi_low: e.target.checked })}
+                  onChange={(e) =>
+                    !disabled &&
+                    onChange({ ...config, use_oi_low: e.target.checked })
+                  }
                   disabled={disabled}
                   className="w-4 h-4 rounded accent-red-500"
                   onClick={(e) => e.stopPropagation()}
@@ -833,14 +987,20 @@ export function CoinSourceEditor({
                     value={config.oi_low_limit || 10}
                     onChange={(e) => {
                       e.stopPropagation()
-                      !disabled && onChange({ ...config, oi_low_limit: parseInt(e.target.value) || 10 })
+                      !disabled &&
+                        onChange({
+                          ...config,
+                          oi_low_limit: parseInt(e.target.value) || 10,
+                        })
                     }}
                     disabled={disabled}
                     className="px-2 py-1 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {[5, 10, 15, 20, 30, 50].map(n => (
-                      <option key={n} value={n}>{n}</option>
+                    {[5, 10, 15, 20, 30, 50].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -854,13 +1014,25 @@ export function CoinSourceEditor({
                   ? 'bg-emerald-500/10 border-emerald-500/50'
                   : 'bg-nofx-bg border-nofx-border hover:border-emerald-500/30'
               }`}
-              onClick={() => !disabled && onChange({ ...config, use_gainers_losers: !config.use_gainers_losers })}
+              onClick={() =>
+                !disabled &&
+                onChange({
+                  ...config,
+                  use_gainers_losers: !config.use_gainers_losers,
+                })
+              }
             >
               <div className="flex items-center gap-2 mb-2">
                 <input
                   type="checkbox"
                   checked={config.use_gainers_losers}
-                  onChange={(e) => !disabled && onChange({ ...config, use_gainers_losers: e.target.checked })}
+                  onChange={(e) =>
+                    !disabled &&
+                    onChange({
+                      ...config,
+                      use_gainers_losers: e.target.checked,
+                    })
+                  }
                   disabled={disabled}
                   className="w-4 h-4 rounded accent-emerald-500"
                   onClick={(e) => e.stopPropagation()}
@@ -876,40 +1048,56 @@ export function CoinSourceEditor({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <ArrowUpRight className="w-3 h-3 text-nofx-success" />
-                        <span className="text-xs text-nofx-text-muted">{t('gainersTop')}:</span>
+                        <span className="text-xs text-nofx-text-muted">
+                          {t('gainersTop')}:
+                        </span>
                       </div>
                       <select
                         value={config.gainers_top || 4}
                         onChange={(e) => {
                           e.stopPropagation()
-                          !disabled && onChange({ ...config, gainers_top: parseInt(e.target.value) || 4 })
+                          !disabled &&
+                            onChange({
+                              ...config,
+                              gainers_top: parseInt(e.target.value) || 4,
+                            })
                         }}
                         disabled={disabled}
                         className="px-2 py-0.5 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {[2, 4, 6, 8, 10].map(n => (
-                          <option key={n} value={n}>{n}</option>
+                        {[2, 4, 6, 8, 10].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <ArrowDownRight className="w-3 h-3 text-nofx-danger" />
-                        <span className="text-xs text-nofx-text-muted">{t('losersTop')}:</span>
+                        <span className="text-xs text-nofx-text-muted">
+                          {t('losersTop')}:
+                        </span>
                       </div>
                       <select
                         value={config.losers_top || 4}
                         onChange={(e) => {
                           e.stopPropagation()
-                          !disabled && onChange({ ...config, losers_top: parseInt(e.target.value) || 4 })
+                          !disabled &&
+                            onChange({
+                              ...config,
+                              losers_top: parseInt(e.target.value) || 4,
+                            })
                         }}
                         disabled={disabled}
                         className="px-2 py-0.5 rounded text-xs bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {[2, 4, 6, 8, 10].map(n => (
-                          <option key={n} value={n}>{n}</option>
+                        {[2, 4, 6, 8, 10].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -925,13 +1113,19 @@ export function CoinSourceEditor({
                   ? 'bg-purple-500/10 border-purple-500/50'
                   : 'bg-nofx-bg border-nofx-border hover:border-purple-500/30'
               }`}
-              onClick={() => !disabled && onChange({ ...config, use_screener: !config.use_screener })}
+              onClick={() =>
+                !disabled &&
+                onChange({ ...config, use_screener: !config.use_screener })
+              }
             >
               <div className="flex items-center gap-2 mb-2">
                 <input
                   type="checkbox"
                   checked={config.use_screener}
-                  onChange={(e) => !disabled && onChange({ ...config, use_screener: e.target.checked })}
+                  onChange={(e) =>
+                    !disabled &&
+                    onChange({ ...config, use_screener: e.target.checked })
+                  }
                   disabled={disabled}
                   className="w-4 h-4 rounded accent-purple-500"
                   onClick={(e) => e.stopPropagation()}
@@ -950,41 +1144,57 @@ export function CoinSourceEditor({
                       value={config.screener_limit || 10}
                       onChange={(e) => {
                         e.stopPropagation()
-                        !disabled && onChange({ ...config, screener_limit: parseInt(e.target.value) || 10 })
+                        !disabled &&
+                          onChange({
+                            ...config,
+                            screener_limit: parseInt(e.target.value) || 10,
+                          })
                       }}
                       disabled={disabled}
                       className="px-1 py-0.5 rounded text-[10px] bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {[5, 10, 15, 20].map(n => (
-                        <option key={n} value={n}>{n}</option>
+                      {[5, 10, 15, 20].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-nofx-text-muted">Dur:</span>
                     <select
-                      value={config.screener_duration || "1h"}
+                      value={config.screener_duration || '1h'}
                       onChange={(e) => {
                         e.stopPropagation()
-                        !disabled && onChange({ ...config, screener_duration: e.target.value })
+                        !disabled &&
+                          onChange({
+                            ...config,
+                            screener_duration: e.target.value,
+                          })
                       }}
                       disabled={disabled}
                       className="px-1 py-0.5 rounded text-[10px] bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {["15m", "1h", "4h"].map(d => (
-                        <option key={d} value={d}>{d}</option>
+                      {['15m', '1h', '4h'].map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-nofx-text-muted">Sort:</span>
                     <select
-                      value={config.screener_sort_by || "oi"}
+                      value={config.screener_sort_by || 'oi'}
                       onChange={(e) => {
                         e.stopPropagation()
-                        !disabled && onChange({ ...config, screener_sort_by: e.target.value })
+                        !disabled &&
+                          onChange({
+                            ...config,
+                            screener_sort_by: e.target.value,
+                          })
                       }}
                       disabled={disabled}
                       className="px-1 py-0.5 rounded text-[10px] bg-nofx-bg border border-nofx-gold/20 text-nofx-text"
@@ -1079,7 +1289,9 @@ export function CoinSourceEditor({
             return (
               <div className="p-2 rounded bg-nofx-bg border border-nofx-border">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-nofx-text-muted">{t('mixedSummary')}:</span>
+                  <span className="text-nofx-text-muted">
+                    {t('mixedSummary')}:
+                  </span>
                   <span className="text-nofx-text font-medium">
                     {sources.join(' + ')}
                   </span>

@@ -1,52 +1,73 @@
 import React, { useState, useEffect } from 'react'
-import { useStore } from '../stores'
+import useSWR from 'swr'
+import { useTradersConfigStore } from '../stores'
+import { api } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
+import { TraderInfo } from '../types'
 import { MarketCard } from '../components/Polymarket/MarketCard'
-import { Wallet, RefreshCw, AlertTriangle } from 'lucide-react'
+import { TradeModal } from '../components/Polymarket/TradeModal'
+import { PositionList } from '../components/Polymarket/PositionList'
+import {
+  polymarketService,
+  PolymarketMarket,
+  PolymarketBalance,
+  PolymarketPosition,
+} from '../services/polymarket'
+import { Wallet, RefreshCw, AlertTriangle, TrendingUp } from 'lucide-react'
+import { toast } from 'sonner'
 
 const PolymarketPage: React.FC = () => {
-  const { traderStore } = useStore()
-  const [markets, setMarkets] = useState<any[]>([])
+  const { user, token } = useAuth()
+  const { allExchanges, loadConfigs } = useTradersConfigStore()
+  const { data: traders } = useSWR<TraderInfo[]>(
+    user && token ? 'traders' : null,
+    api.getTraders
+  )
+
+  const [markets, setMarkets] = useState<PolymarketMarket[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [balance, setBalance] = useState<PolymarketBalance | null>(null)
+  const [positions, setPositions] = useState<PolymarketPosition[]>([])
+  const [positionsLoading, setPositionsLoading] = useState(false)
+
+  // Modal state
+  const [selectedMarket, setSelectedMarket] = useState<PolymarketMarket | null>(
+    null
+  )
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
+
+  // Load configs on mount
+  useEffect(() => {
+    loadConfigs(user, token)
+  }, [user, token, loadConfigs])
+
+  // Find configured Polymarket trader
+  const polymarketTrader = traders?.find((t) => {
+    const exchange = allExchanges.find((e) => e.id === t.exchange_id)
+    return exchange?.exchange_type === 'polymarket'
+  })
+
+  const polymarketExchange = polymarketTrader
+    ? allExchanges.find((e) => e.id === polymarketTrader.exchange_id)
+    : undefined
+  
+  const isConfigured = !!polymarketTrader
 
   useEffect(() => {
     loadMarkets()
-  }, [])
+    if (isConfigured && polymarketTrader) {
+      loadBalance(polymarketTrader.trader_id)
+      loadPositions(polymarketTrader.trader_id)
+    }
+  }, [isConfigured, polymarketTrader])
 
   const loadMarkets = async () => {
     setLoading(true)
     setError(null)
     try {
-      // Mock API call for now, replace with real backend endpoint
-      // const response = await fetch('/api/polymarket/markets?limit=20')
-      // const data = await response.json()
-      
-      // Mock data
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      const mockData = [
-        {
-          id: '1',
-          question: 'Will Bitcoin hit $100k in 2024?',
-          liquidity: '500000',
-          volume24h: '120000',
-          outcomes: [
-            { id: '1-yes', price: '0.45' },
-            { id: '1-no', price: '0.55' }
-          ]
-        },
-        {
-          id: '2',
-          question: 'Will Ethereum upgrade execute successfully in Q2?',
-          liquidity: '300000',
-          volume24h: '80000',
-          outcomes: [
-            { id: '2-yes', price: '0.80' },
-            { id: '2-no', price: '0.20' }
-          ]
-        }
-      ]
-      
-      setMarkets(mockData)
+      const data = await polymarketService.getMarkets(20)
+      setMarkets(data)
     } catch (err) {
       console.error('Failed to load markets:', err)
       setError('Failed to load markets. Please check your connection.')
@@ -55,7 +76,35 @@ const PolymarketPage: React.FC = () => {
     }
   }
 
-  const isConfigured = !!traderStore.traders.find(t => t.exchange === 'polymarket')
+  const loadBalance = async (traderId: string) => {
+    try {
+      const data = await polymarketService.getBalance(traderId)
+      setBalance(data)
+    } catch (err) {
+      console.error('Failed to load balance:', err)
+    }
+  }
+
+  const loadPositions = async (traderId: string) => {
+    setPositionsLoading(true)
+    try {
+      const data = await polymarketService.getPositions(traderId)
+      setPositions(data)
+    } catch (err) {
+      console.error('Failed to load positions:', err)
+    } finally {
+      setPositionsLoading(false)
+    }
+  }
+
+  const handleTrade = (market: PolymarketMarket) => {
+    if (!isConfigured) {
+      toast.error('Please configure a Polymarket trader first')
+      return
+    }
+    setSelectedMarket(market)
+    setIsTradeModalOpen(true)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 text-gray-100">
@@ -74,14 +123,15 @@ const PolymarketPage: React.FC = () => {
           <div>
             <h3 className="font-semibold text-yellow-500">Not Configured</h3>
             <p className="text-sm text-gray-300">
-              Please add a Polymarket trader in the Trader Configuration to start trading.
+              Please add a Polymarket trader in the Trader Configuration to
+              start trading.
             </p>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sidebar - Account Info */}
+        {/* Sidebar - Account Info & Positions */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -91,7 +141,7 @@ const PolymarketPage: React.FC = () => {
               <div>
                 <div className="text-sm text-gray-400 mb-1">Wallet Address</div>
                 <div className="font-mono text-sm bg-gray-900/50 p-2 rounded truncate text-gray-300">
-                  {traderStore.traders.find(t => t.exchange === 'polymarket')?.polymarketWalletAddr || 'Not Configured'}
+                  {polymarketExchange?.polymarketWalletAddr || 'Not Configured'}
                 </div>
               </div>
               <div>
@@ -104,24 +154,97 @@ const PolymarketPage: React.FC = () => {
               <div>
                 <div className="text-sm text-gray-400 mb-1">Balance</div>
                 <div className="text-2xl font-bold text-white">
-                  $0.00 <span className="text-sm font-normal text-gray-500">USDC</span>
+                  ${balance?.collateral_value?.toFixed(2) || '0.00'}{' '}
+                  <span className="text-sm font-normal text-gray-500">
+                    USDC
+                  </span>
                 </div>
+                {balance && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Cash: ${balance.cash?.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Positions List */}
+          {isConfigured && (
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-400" /> My Positions
+              </h2>
+
+              {positionsLoading ? (
+                <div className="flex justify-center py-8 text-gray-500">
+                  <RefreshCw className="w-6 h-6 animate-spin" />
+                </div>
+              ) : positions.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  No active positions found.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {positions.map((pos, idx) => (
+                    <div
+                      key={pos.asset_id || idx}
+                      className="bg-gray-900/50 rounded-lg p-3 border border-gray-800 hover:border-gray-700 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-medium text-gray-200 text-sm break-all pr-2">
+                          {pos.symbol || `Asset ${pos.asset_id.slice(0, 8)}...`}
+                        </div>
+                        <div className="text-right whitespace-nowrap">
+                          <div className="text-sm font-bold text-white">
+                            ${pos.value_usd?.toFixed(2) ?? '0.00'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs text-gray-400">
+                        <div className="flex gap-3">
+                          <span>
+                            Size:{' '}
+                            <span className="text-gray-300">{pos.size}</span>
+                          </span>
+                          <span>
+                            Avg:{' '}
+                            <span className="text-gray-300">
+                              ${pos.price?.toFixed(2) ?? '-'}
+                            </span>
+                          </span>
+                        </div>
+                        <div
+                          className={
+                            pos.size > 0 ? 'text-green-500' : 'text-gray-500'
+                          }
+                        >
+                          {pos.size > 0 ? 'LONG' : 'FLAT'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Main Content - Market List */}
         <div className="lg:col-span-2">
           <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Active Markets</h2>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-400" /> Active Markets
+              </h2>
               <button
                 onClick={loadMarkets}
                 disabled={loading}
                 className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
               >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
+                />
               </button>
             </div>
 
@@ -133,7 +256,12 @@ const PolymarketPage: React.FC = () => {
             ) : error ? (
               <div className="text-center py-12 text-red-400">
                 <p>{error}</p>
-                <button onClick={loadMarkets} className="mt-2 text-sm underline">Try Again</button>
+                <button
+                  onClick={loadMarkets}
+                  className="mt-2 text-sm underline"
+                >
+                  Try Again
+                </button>
               </div>
             ) : markets.length > 0 ? (
               <div className="grid gap-4">
@@ -141,7 +269,7 @@ const PolymarketPage: React.FC = () => {
                   <MarketCard
                     key={market.id}
                     market={market}
-                    onTrade={(id) => console.log('Trade market:', id)}
+                    onTrade={() => handleTrade(market)}
                   />
                 ))}
               </div>
@@ -153,6 +281,21 @@ const PolymarketPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Trade Modal */}
+      {selectedMarket && polymarketTrader && (
+        <TradeModal
+          isOpen={isTradeModalOpen}
+          onClose={() => setIsTradeModalOpen(false)}
+          market={selectedMarket}
+          traderId={polymarketTrader.trader_id}
+          onSuccess={() => {
+            toast.success('Order placed successfully!')
+            loadBalance(polymarketTrader.trader_id)
+            loadPositions(polymarketTrader.trader_id)
+          }}
+        />
+      )}
     </div>
   )
 }

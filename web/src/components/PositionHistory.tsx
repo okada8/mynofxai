@@ -133,7 +133,10 @@ function SymbolStatsRow({ stat }: { stat: SymbolStats }) {
           <div className="text-xs" style={{ color: '#848E9C' }}>
             Win Rate
           </div>
-          <div className="font-mono font-semibold" style={{ color: winRateColor }}>
+          <div
+            className="font-mono font-semibold"
+            style={{ color: winRateColor }}
+          >
             {winRate.toFixed(1)}%
           </div>
         </div>
@@ -152,7 +155,13 @@ function SymbolStatsRow({ stat }: { stat: SymbolStats }) {
 }
 
 // Direction Stats Card
-function DirectionStatsCard({ stat, language }: { stat: DirectionStats; language: 'en' | 'zh' }) {
+function DirectionStatsCard({
+  stat,
+  language,
+}: {
+  stat: DirectionStats
+  language: 'en' | 'zh'
+}) {
   const isLong = (stat.side || '').toLowerCase() === 'long'
   const iconColor = isLong ? '#0ECB81' : '#F6465D'
   const totalPnl = stat.total_pnl || 0
@@ -171,10 +180,7 @@ function DirectionStatsCard({ stat, language }: { stat: DirectionStats; language
     >
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xl">{isLong ? '📈' : '📉'}</span>
-        <span
-          className="font-bold uppercase"
-          style={{ color: iconColor }}
-        >
+        <span className="font-bold uppercase" style={{ color: iconColor }}>
           {stat.side || 'Unknown'}
         </span>
       </div>
@@ -218,7 +224,10 @@ function DirectionStatsCard({ stat, language }: { stat: DirectionStats; language
           <div className="text-xs mb-1" style={{ color: '#848E9C' }}>
             {t('positionHistory.avgPnL', language)}
           </div>
-          <div className="font-mono font-semibold" style={{ color: avgPnl >= 0 ? '#0ECB81' : '#F6465D' }}>
+          <div
+            className="font-mono font-semibold"
+            style={{ color: avgPnl >= 0 ? '#0ECB81' : '#F6465D' }}
+          >
             {avgPnl >= 0 ? '+' : ''}
             {formatNumber(avgPnl)}
           </div>
@@ -238,9 +247,16 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
   const pnlColor = isProfitable ? '#0ECB81' : '#F6465D'
 
   // Calculate holding time
-  const entryTime = position.entry_time ? new Date(position.entry_time).getTime() : 0
-  const exitTime = position.exit_time ? new Date(position.exit_time).getTime() : 0
-  const holdingMinutes = entryTime && exitTime && exitTime > entryTime ? (exitTime - entryTime) / 60000 : 0
+  const entryTime = position.entry_time
+    ? new Date(position.entry_time).getTime()
+    : 0
+  const exitTime = position.exit_time
+    ? new Date(position.exit_time).getTime()
+    : 0
+  const holdingMinutes =
+    entryTime && exitTime && exitTime > entryTime
+      ? (exitTime - entryTime) / 60000
+      : 0
 
   // Calculate PnL percentage based on entry price
   const entryPrice = position.entry_price || 0
@@ -265,7 +281,10 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
       {/* Symbol */}
       <td className="py-3 px-4">
         <div className="flex items-center gap-2">
-          <span className="font-mono font-semibold" style={{ color: '#EAECEF' }}>
+          <span
+            className="font-mono font-semibold"
+            style={{ color: '#EAECEF' }}
+          >
             {(position.symbol || '').replace('USDT', '')}
           </span>
           <span
@@ -282,22 +301,34 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
       </td>
 
       {/* Entry Price */}
-      <td className="py-3 px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
+      <td
+        className="py-3 px-4 text-right font-mono"
+        style={{ color: '#EAECEF' }}
+      >
         {formatPrice(entryPrice)}
       </td>
 
       {/* Exit Price */}
-      <td className="py-3 px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
+      <td
+        className="py-3 px-4 text-right font-mono"
+        style={{ color: '#EAECEF' }}
+      >
         {formatPrice(exitPrice)}
       </td>
 
       {/* Quantity */}
-      <td className="py-3 px-4 text-right font-mono" style={{ color: '#848E9C' }}>
+      <td
+        className="py-3 px-4 text-right font-mono"
+        style={{ color: '#848E9C' }}
+      >
         {formatQuantity(displayQty)}
       </td>
 
       {/* Position Value (Entry Price * Quantity) */}
-      <td className="py-3 px-4 text-right font-mono" style={{ color: '#EAECEF' }}>
+      <td
+        className="py-3 px-4 text-right font-mono"
+        style={{ color: '#EAECEF' }}
+      >
         {formatNumber(entryPrice * displayQty)}
       </td>
 
@@ -314,14 +345,21 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
       </td>
 
       {/* Fee - show more precision for small fees */}
-      <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#848E9C' }}>
-        -{((position.fee || 0) < 0.01 && (position.fee || 0) > 0)
+      <td
+        className="py-3 px-4 text-right font-mono text-xs"
+        style={{ color: '#848E9C' }}
+      >
+        -
+        {(position.fee || 0) < 0.01 && (position.fee || 0) > 0
           ? (position.fee || 0).toFixed(4)
           : (position.fee || 0).toFixed(2)}
       </td>
 
       {/* Duration */}
-      <td className="py-3 px-4 text-center text-sm" style={{ color: '#848E9C' }}>
+      <td
+        className="py-3 px-4 text-center text-sm"
+        style={{ color: '#848E9C' }}
+      >
         {formatDuration(holdingMinutes)}
       </td>
 
@@ -358,15 +396,22 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
         setLoading(true)
         setError(null)
         // Fetch more data than needed to support filtering, but respect pageSize for initial load
-        const data = await api.getPositionHistory(traderId, Math.max(200, pageSize * 5))
+        const data = await api.getPositionHistory(
+          traderId,
+          Math.max(200, pageSize * 5)
+        )
         setPositions(data.positions || [])
         setStats(data.stats)
         setSymbolStats(data.symbol_stats || [])
         setDirectionStats(data.direction_stats || [])
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load history'
+        const message =
+          err instanceof Error ? err.message : 'Failed to load history'
         // If trader not found or no history, show empty state instead of error
-        if (message.includes('Trader not found') || message.includes('"error":"Trader not found"')) {
+        if (
+          message.includes('Trader not found') ||
+          message.includes('"error":"Trader not found"')
+        ) {
           setPositions([])
           setStats(null)
           setSymbolStats([])
@@ -411,7 +456,8 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
       switch (sortBy) {
         case 'time':
           comparison =
-            new Date(a.exit_time || 0).getTime() - new Date(b.exit_time || 0).getTime()
+            new Date(a.exit_time || 0).getTime() -
+            new Date(b.exit_time || 0).getTime()
           break
         case 'pnl':
           comparison = (a.realized_pnl || 0) - (b.realized_pnl || 0)
@@ -419,8 +465,8 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
         case 'pnl_pct': {
           const aPrice = a.entry_price || 1
           const bPrice = b.entry_price || 1
-          const aPct = ((a.exit_price || 0) - aPrice) / aPrice * 100
-          const bPct = ((b.exit_price || 0) - bPrice) / bPrice * 100
+          const aPct = (((a.exit_price || 0) - aPrice) / aPrice) * 100
+          const bPct = (((b.exit_price || 0) - bPrice) / bPrice) * 100
           comparison = aPct - bPct
           break
         }
@@ -511,7 +557,10 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
         }}
       >
         <div className="text-4xl mb-4">📊</div>
-        <div className="text-lg font-semibold mb-2" style={{ color: '#EAECEF' }}>
+        <div
+          className="text-lg font-semibold mb-2"
+          style={{ color: '#EAECEF' }}
+        >
           {t('positionHistory.noHistory', language)}
         </div>
         <div style={{ color: '#848E9C' }}>
@@ -530,7 +579,10 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
             icon="📊"
             title={t('positionHistory.totalTrades', language)}
             value={stats.total_trades || 0}
-            subtitle={t('positionHistory.winLoss', language, { win: stats.win_trades || 0, loss: stats.loss_trades || 0 })}
+            subtitle={t('positionHistory.winLoss', language, {
+              win: stats.win_trades || 0,
+              loss: stats.loss_trades || 0,
+            })}
             language={language}
           />
           <StatCard
@@ -551,7 +603,10 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
           <StatCard
             icon="💰"
             title={t('positionHistory.totalPnL', language)}
-            value={((stats.total_pnl || 0) >= 0 ? '+' : '') + formatNumber(stats.total_pnl || 0)}
+            value={
+              ((stats.total_pnl || 0) >= 0 ? '+' : '') +
+              formatNumber(stats.total_pnl || 0)
+            }
             color={(stats.total_pnl || 0) >= 0 ? '#0ECB81' : '#F6465D'}
             subtitle={`${t('positionHistory.fee', language)}: -${formatNumber(stats.total_fee || 0)}`}
             metricKey="total_return"
@@ -561,7 +616,13 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
             icon="📈"
             title={t('positionHistory.profitFactor', language)}
             value={(stats.profit_factor || 0).toFixed(2)}
-            color={(stats.profit_factor || 0) >= 1.5 ? '#0ECB81' : (stats.profit_factor || 0) >= 1 ? '#F0B90B' : '#F6465D'}
+            color={
+              (stats.profit_factor || 0) >= 1.5
+                ? '#0ECB81'
+                : (stats.profit_factor || 0) >= 1
+                  ? '#F0B90B'
+                  : '#F6465D'
+            }
             subtitle={t('positionHistory.profitFactorDesc', language)}
             metricKey="profit_factor"
             language={language}
@@ -569,8 +630,16 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
           <StatCard
             icon="⚖️"
             title={t('positionHistory.plRatio', language)}
-            value={profitLossRatio === Infinity ? '∞' : profitLossRatio.toFixed(2)}
-            color={profitLossRatio >= 1.5 ? '#0ECB81' : profitLossRatio >= 1 ? '#F0B90B' : '#F6465D'}
+            value={
+              profitLossRatio === Infinity ? '∞' : profitLossRatio.toFixed(2)
+            }
+            color={
+              profitLossRatio >= 1.5
+                ? '#0ECB81'
+                : profitLossRatio >= 1
+                  ? '#F0B90B'
+                  : '#F6465D'
+            }
             subtitle={t('positionHistory.plRatioDesc', language)}
             metricKey="expectancy"
             language={language}
@@ -585,7 +654,13 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
             icon="📉"
             title={t('positionHistory.sharpeRatio', language)}
             value={(stats.sharpe_ratio || 0).toFixed(2)}
-            color={(stats.sharpe_ratio || 0) >= 1 ? '#0ECB81' : (stats.sharpe_ratio || 0) >= 0 ? '#F0B90B' : '#F6465D'}
+            color={
+              (stats.sharpe_ratio || 0) >= 1
+                ? '#0ECB81'
+                : (stats.sharpe_ratio || 0) >= 0
+                  ? '#F0B90B'
+                  : '#F6465D'
+            }
             subtitle={t('positionHistory.sharpeRatioDesc', language)}
             metricKey="sharpe_ratio"
             language={language}
@@ -595,7 +670,13 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
             title={t('positionHistory.maxDrawdown', language)}
             value={(stats.max_drawdown_pct || 0).toFixed(1)}
             suffix="%"
-            color={(stats.max_drawdown_pct || 0) <= 10 ? '#0ECB81' : (stats.max_drawdown_pct || 0) <= 20 ? '#F0B90B' : '#F6465D'}
+            color={
+              (stats.max_drawdown_pct || 0) <= 10
+                ? '#0ECB81'
+                : (stats.max_drawdown_pct || 0) <= 20
+                  ? '#F0B90B'
+                  : '#F6465D'
+            }
             metricKey="max_drawdown"
             language={language}
           />
@@ -617,8 +698,17 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
           <StatCard
             icon="💵"
             title={t('positionHistory.netPnL', language)}
-            value={((stats.total_pnl || 0) - (stats.total_fee || 0) >= 0 ? '+' : '') + formatNumber((stats.total_pnl || 0) - (stats.total_fee || 0))}
-            color={(stats.total_pnl || 0) - (stats.total_fee || 0) >= 0 ? '#0ECB81' : '#F6465D'}
+            value={
+              ((stats.total_pnl || 0) - (stats.total_fee || 0) >= 0
+                ? '+'
+                : '') +
+              formatNumber((stats.total_pnl || 0) - (stats.total_fee || 0))
+            }
+            color={
+              (stats.total_pnl || 0) - (stats.total_fee || 0) >= 0
+                ? '#0ECB81'
+                : '#F6465D'
+            }
             subtitle={t('positionHistory.netPnLDesc', language)}
             language={language}
           />
@@ -629,7 +719,11 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
       {directionStats.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {directionStats.map((stat) => (
-            <DirectionStatsCard key={stat.side} stat={stat} language={language} />
+            <DirectionStatsCard
+              key={stat.side}
+              stat={stat}
+              language={language}
+            />
           ))}
         </div>
       )}
@@ -684,7 +778,9 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                 color: '#EAECEF',
               }}
             >
-              <option value="all">{t('positionHistory.allSymbols', language)}</option>
+              <option value="all">
+                {t('positionHistory.allSymbols', language)}
+              </option>
               {uniqueSymbols.map((symbol) => (
                 <option key={symbol} value={symbol}>
                   {(symbol || '').replace('USDT', '')}
@@ -697,7 +793,10 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
             <span className="text-sm" style={{ color: '#848E9C' }}>
               {t('positionHistory.side', language)}:
             </span>
-            <div className="flex rounded overflow-hidden" style={{ border: '1px solid #2B3139' }}>
+            <div
+              className="flex rounded overflow-hidden"
+              style={{ border: '1px solid #2B3139' }}
+            >
               {['all', 'LONG', 'SHORT'].map((side) => (
                 <button
                   key={side}
@@ -735,10 +834,18 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                 color: '#EAECEF',
               }}
             >
-              <option value="time-desc">{t('positionHistory.latestFirst', language)}</option>
-              <option value="time-asc">{t('positionHistory.oldestFirst', language)}</option>
-              <option value="pnl-desc">{t('positionHistory.highestPnL', language)}</option>
-              <option value="pnl-asc">{t('positionHistory.lowestPnL', language)}</option>
+              <option value="time-desc">
+                {t('positionHistory.latestFirst', language)}
+              </option>
+              <option value="time-asc">
+                {t('positionHistory.oldestFirst', language)}
+              </option>
+              <option value="pnl-desc">
+                {t('positionHistory.highestPnL', language)}
+              </option>
+              <option value="pnl-asc">
+                {t('positionHistory.lowestPnL', language)}
+              </option>
             </select>
           </div>
         </div>
@@ -820,7 +927,10 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
           {/* Left: Count info */}
           <div className="flex items-center gap-4">
             <span>
-              {t('positionHistory.showingPositions', language, { count: totalFilteredCount, total: positions.length })}
+              {t('positionHistory.showingPositions', language, {
+                count: totalFilteredCount,
+                total: positions.length,
+              })}
             </span>
             {totalFilteredCount > 0 && (
               <span>
@@ -828,16 +938,25 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                 <span
                   style={{
                     color:
-                      filteredAndSortedPositions.reduce((sum, p) => sum + (p.realized_pnl || 0), 0) >= 0
+                      filteredAndSortedPositions.reduce(
+                        (sum, p) => sum + (p.realized_pnl || 0),
+                        0
+                      ) >= 0
                         ? '#0ECB81'
                         : '#F6465D',
                   }}
                 >
-                  {filteredAndSortedPositions.reduce((sum, p) => sum + (p.realized_pnl || 0), 0) >= 0
+                  {filteredAndSortedPositions.reduce(
+                    (sum, p) => sum + (p.realized_pnl || 0),
+                    0
+                  ) >= 0
                     ? '+'
                     : ''}
                   {formatNumber(
-                    filteredAndSortedPositions.reduce((sum, p) => sum + (p.realized_pnl || 0), 0)
+                    filteredAndSortedPositions.reduce(
+                      (sum, p) => sum + (p.realized_pnl || 0),
+                      0
+                    )
                   )}
                 </span>
               </span>
@@ -896,11 +1015,14 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                   {currentPage} / {totalPages}
                 </span>
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-30"
                   style={{
-                    background: currentPage === totalPages ? 'transparent' : '#2B3139',
+                    background:
+                      currentPage === totalPages ? 'transparent' : '#2B3139',
                     color: '#EAECEF',
                   }}
                 >
@@ -911,7 +1033,8 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                   disabled={currentPage === totalPages}
                   className="px-2 py-1 rounded text-xs transition-colors disabled:opacity-30"
                   style={{
-                    background: currentPage === totalPages ? 'transparent' : '#2B3139',
+                    background:
+                      currentPage === totalPages ? 'transparent' : '#2B3139',
                     color: '#EAECEF',
                   }}
                 >

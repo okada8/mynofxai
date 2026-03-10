@@ -8,7 +8,7 @@ interface TradingViewScreenerProps {
 
 function TradingViewScreenerComponent({
   height = 600,
-  width = "100%",
+  width = '100%',
 }: TradingViewScreenerProps) {
   const { language } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -32,18 +32,19 @@ function TradingViewScreenerComponent({
 
     // Load TradingView Script
     const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js'
+    script.src =
+      'https://s3.tradingview.com/external-embedding/embed-widget-screener.js'
     script.type = 'text/javascript'
     script.async = true
     script.innerHTML = JSON.stringify({
-      width: "100%",
-      height: "100%",
-      defaultColumn: "overview",
-      screener_type: "crypto_mkt",
-      displayCurrency: "USD",
-      colorTheme: "dark",
+      width: '100%',
+      height: '100%',
+      defaultColumn: 'overview',
+      screener_type: 'crypto_mkt',
+      displayCurrency: 'USD',
+      colorTheme: 'dark',
       locale: language === 'zh' ? 'zh_CN' : 'en',
-      isTransparent: false
+      isTransparent: false,
     })
 
     widgetContainer.appendChild(script)
@@ -56,8 +57,8 @@ function TradingViewScreenerComponent({
   }, [language])
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="tradingview-widget-container"
       style={{ height: typeof height === 'number' ? height : height, width }}
     />

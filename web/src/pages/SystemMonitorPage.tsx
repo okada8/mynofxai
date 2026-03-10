@@ -1,5 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { Cpu, Server, Clock, Terminal as TerminalIcon, Container, PlayCircle, StopCircle, PauseCircle } from 'lucide-react'
+import {
+  Cpu,
+  Server,
+  Clock,
+  Terminal as TerminalIcon,
+  Container,
+  PlayCircle,
+  StopCircle,
+  PauseCircle,
+} from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
@@ -8,7 +17,6 @@ import { api } from '../lib/api' // Keep api import for other stats
 
 // Add AttachAddon from xterm-addon-attach if available, or implement simple WebSocket handler
 // For now, we'll implement a custom simple WebSocket handler to avoid another dependency issue
-
 
 // Define interface locally to avoid import issues
 import { SystemStats } from '../types'
@@ -54,13 +62,13 @@ export function SystemMonitorPage() {
     const hours = Math.floor((seconds % (3600 * 24)) / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = Math.floor(seconds % 60)
-    
+
     const parts = []
     if (days > 0) parts.push(`${days}d`)
     if (hours > 0) parts.push(`${hours}h`)
     if (minutes > 0) parts.push(`${minutes}m`)
     parts.push(`${secs}s`)
-    
+
     return parts.join(' ')
   }
 
@@ -94,75 +102,77 @@ export function SystemMonitorPage() {
       theme: {
         background: '#000000',
         foreground: '#00ff00',
-        cursor: '#00ff00'
+        cursor: '#00ff00',
       },
       fontSize: 14,
       fontFamily: 'monospace',
       cursorBlink: true,
-      rows: 12
+      rows: 12,
     })
 
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)
-    
+
     term.open(terminalRef.current)
     fitAddon.fit()
-    
+
     xtermInstance.current = term
 
     // Connect to WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.hostname}:8080/api/ws/terminal` // Adjust port if needed, assuming backend is on 8080
-    
+
     let socket: WebSocket | null = null
-    
+
     try {
-        socket = new WebSocket(wsUrl)
-        
-        socket.onopen = () => {
-            term.writeln('\r\n\x1b[1;32m✓ Connected to backend terminal\x1b[0m\r\n')
-        }
-        
-        socket.onmessage = (event) => {
-            term.write(event.data)
-        }
-        
-        socket.onclose = () => {
-            term.writeln('\r\n\x1b[1;31m✗ Connection closed\x1b[0m\r\n')
-        }
-        
-        socket.onerror = (error) => {
-            term.writeln('\r\n\x1b[1;31m✗ Connection error\x1b[0m\r\n')
-            console.error('WebSocket error:', error)
-        }
+      socket = new WebSocket(wsUrl)
+
+      socket.onopen = () => {
+        term.writeln('\r\n\x1b[1;32m✓ Connected to backend terminal\x1b[0m\r\n')
+      }
+
+      socket.onmessage = (event) => {
+        term.write(event.data)
+      }
+
+      socket.onclose = () => {
+        term.writeln('\r\n\x1b[1;31m✗ Connection closed\x1b[0m\r\n')
+      }
+
+      socket.onerror = (error) => {
+        term.writeln('\r\n\x1b[1;31m✗ Connection error\x1b[0m\r\n')
+        console.error('WebSocket error:', error)
+      }
     } catch (e) {
-        term.writeln(`\r\n\x1b[1;31m✗ Failed to connect: ${e}\x1b[0m\r\n`)
+      term.writeln(`\r\n\x1b[1;31m✗ Failed to connect: ${e}\x1b[0m\r\n`)
     }
 
     // Handle user input
-    term.onData(data => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(data)
+    term.onData((data) => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(data)
+      } else {
+        // Local echo fallback if not connected
+        const code = data.charCodeAt(0)
+        if (code === 13) {
+          // Enter
+          term.writeln('')
+          term.write('\x1b[1;32m$ \x1b[0m')
+        } else if (code === 127) {
+          // Backspace
+          term.write('\b \b')
         } else {
-            // Local echo fallback if not connected
-            const code = data.charCodeAt(0)
-            if (code === 13) { // Enter
-                term.writeln('')
-                term.write('\x1b[1;32m$ \x1b[0m')
-            } else if (code === 127) { // Backspace
-                term.write('\b \b')
-            } else {
-                term.write(data)
-            }
+          term.write(data)
         }
+      }
     })
 
     const handleResize = () => {
       fitAddon.fit()
     }
-    
+
     window.addEventListener('resize', handleResize)
-    
+
     return () => {
       window.removeEventListener('resize', handleResize)
       term.dispose()
@@ -205,7 +215,7 @@ export function SystemMonitorPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nofx-gold"></div>
           </div>
         ) : error ? (
-           <div className="text-center text-red-500 py-10 bg-[#1E1E1E] rounded-xl border border-red-500/20">
+          <div className="text-center text-red-500 py-10 bg-[#1E1E1E] rounded-xl border border-red-500/20">
             {error}
           </div>
         ) : stats ? (
@@ -214,21 +224,29 @@ export function SystemMonitorPage() {
             <div className="bg-[#1E1E1E] rounded-xl p-6 border border-white/5 space-y-6">
               <div className="flex items-center gap-2 mb-4 text-nofx-gold">
                 <Server className="w-6 h-6" />
-                <h3 className="text-xl font-bold">{language === 'zh' ? '系统信息' : 'System Info'}</h3>
+                <h3 className="text-xl font-bold">
+                  {language === 'zh' ? '系统信息' : 'System Info'}
+                </h3>
               </div>
-              
+
               <div className="grid gap-4">
                 <div className="flex justify-between p-3 bg-black/20 rounded-lg">
                   <span className="text-gray-400">{labels.hostname}</span>
-                  <span className="font-mono font-bold">{stats.host_name || '-'}</span>
+                  <span className="font-mono font-bold">
+                    {stats.host_name || '-'}
+                  </span>
                 </div>
                 <div className="flex justify-between p-3 bg-black/20 rounded-lg">
                   <span className="text-gray-400">{labels.os}</span>
-                  <span className="font-mono">{stats.os} {stats.platform}</span>
+                  <span className="font-mono">
+                    {stats.os} {stats.platform}
+                  </span>
                 </div>
                 <div className="flex justify-between p-3 bg-black/20 rounded-lg">
                   <span className="text-gray-400">{labels.kernel}</span>
-                  <span className="font-mono text-sm" title={stats.kernel}>{stats.kernel}</span>
+                  <span className="font-mono text-sm" title={stats.kernel}>
+                    {stats.kernel}
+                  </span>
                 </div>
                 <div className="flex justify-between p-3 bg-black/20 rounded-lg">
                   <span className="text-gray-400">{labels.arch}</span>
@@ -236,7 +254,9 @@ export function SystemMonitorPage() {
                 </div>
                 <div className="flex justify-between p-3 bg-black/20 rounded-lg">
                   <span className="text-gray-400">{labels.uptime}</span>
-                  <span className="font-mono">{formatUptime(stats.uptime)}</span>
+                  <span className="font-mono">
+                    {formatUptime(stats.uptime)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -245,23 +265,37 @@ export function SystemMonitorPage() {
             <div className="bg-[#1E1E1E] rounded-xl p-6 border border-white/5 space-y-6">
               <div className="flex items-center gap-2 mb-4 text-nofx-gold">
                 <Cpu className="w-6 h-6" />
-                <h3 className="text-xl font-bold">{language === 'zh' ? '资源使用' : 'Resources'}</h3>
+                <h3 className="text-xl font-bold">
+                  {language === 'zh' ? '资源使用' : 'Resources'}
+                </h3>
               </div>
 
               <div className="space-y-8">
                 {/* CPU / Cores */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-black/20 p-4 rounded-lg text-center">
-                    <div className="text-gray-400 text-sm mb-1">{labels.cpu}</div>
-                    <div className="text-2xl font-mono font-bold">{stats.num_cpu}</div>
-                    <div className="text-xs text-gray-500 mt-1">Load: {stats.cpu_load?.toFixed(1)}%</div>
+                    <div className="text-gray-400 text-sm mb-1">
+                      {labels.cpu}
+                    </div>
+                    <div className="text-2xl font-mono font-bold">
+                      {stats.num_cpu}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Load: {stats.cpu_load?.toFixed(1)}%
+                    </div>
                     {stats.cpu_temp > 0 && (
-                      <div className="text-xs text-gray-500">Temp: {stats.cpu_temp.toFixed(1)}°C</div>
+                      <div className="text-xs text-gray-500">
+                        Temp: {stats.cpu_temp.toFixed(1)}°C
+                      </div>
                     )}
                   </div>
                   <div className="bg-black/20 p-4 rounded-lg text-center">
-                    <div className="text-gray-400 text-sm mb-1">{labels.goroutines}</div>
-                    <div className="text-2xl font-mono font-bold">{stats.go_routines}</div>
+                    <div className="text-gray-400 text-sm mb-1">
+                      {labels.goroutines}
+                    </div>
+                    <div className="text-2xl font-mono font-bold">
+                      {stats.go_routines}
+                    </div>
                   </div>
                 </div>
 
@@ -270,15 +304,19 @@ export function SystemMonitorPage() {
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-400">{labels.memory}</span>
                     <span className="font-mono">
-                      {formatBytes(stats.memory_used)} / {formatBytes(stats.memory_total)}
+                      {formatBytes(stats.memory_used)} /{' '}
+                      {formatBytes(stats.memory_total)}
                     </span>
                   </div>
                   {/* Memory Bar */}
                   <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        stats.memory_usage > 90 ? 'bg-red-500' : 
-                        stats.memory_usage > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                        stats.memory_usage > 90
+                          ? 'bg-red-500'
+                          : stats.memory_usage > 70
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
                       }`}
                       style={{ width: `${Math.min(stats.memory_usage, 100)}%` }}
                     />
@@ -293,15 +331,19 @@ export function SystemMonitorPage() {
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-400">{labels.storage}</span>
                     <span className="font-mono">
-                      {formatBytes(stats.disk_used)} / {formatBytes(stats.disk_total)}
+                      {formatBytes(stats.disk_used)} /{' '}
+                      {formatBytes(stats.disk_total)}
                     </span>
                   </div>
                   {/* Storage Bar */}
                   <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        stats.disk_usage > 90 ? 'bg-red-500' : 
-                        stats.disk_usage > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                        stats.disk_usage > 90
+                          ? 'bg-red-500'
+                          : stats.disk_usage > 70
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
                       }`}
                       style={{ width: `${Math.min(stats.disk_usage, 100)}%` }}
                     />
@@ -322,7 +364,7 @@ export function SystemMonitorPage() {
               <Container className="w-6 h-6" />
               <h3 className="text-xl font-bold">{labels.containers}</h3>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -336,26 +378,40 @@ export function SystemMonitorPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {stats.containers.map((container) => (
-                    <tr key={container.id} className="hover:bg-white/5 transition-colors">
+                    <tr
+                      key={container.id}
+                      className="hover:bg-white/5 transition-colors"
+                    >
                       <td className="py-3 pl-2">
                         {getContainerIcon(container.state)}
                       </td>
                       <td className="py-3 font-mono font-bold text-white">
                         {container.name}
-                        <div className="text-xs text-gray-500 font-normal">{container.id}</div>
+                        <div className="text-xs text-gray-500 font-normal">
+                          {container.id}
+                        </div>
                       </td>
-                      <td className="py-3 text-gray-300 font-mono text-xs truncate max-w-[200px]" title={container.image}>
+                      <td
+                        className="py-3 text-gray-300 font-mono text-xs truncate max-w-[200px]"
+                        title={container.image}
+                      >
                         {container.image}
                       </td>
                       <td className="py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          container.state === 'running' ? 'bg-green-500/20 text-green-400' :
-                          container.state === 'exited' ? 'bg-red-500/20 text-red-400' :
-                          'bg-gray-500/20 text-gray-400'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            container.state === 'running'
+                              ? 'bg-green-500/20 text-green-400'
+                              : container.state === 'exited'
+                                ? 'bg-red-500/20 text-red-400'
+                                : 'bg-gray-500/20 text-gray-400'
+                          }`}
+                        >
                           {container.state}
                         </span>
-                        <div className="text-xs text-gray-500 mt-0.5">{container.status}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {container.status}
+                        </div>
                       </td>
                       <td className="py-3 text-gray-400">
                         {new Date(container.created * 1000).toLocaleString()}
@@ -370,13 +426,13 @@ export function SystemMonitorPage() {
 
         {/* Terminal Section */}
         <div className="bg-[#1E1E1E] rounded-xl p-6 border border-white/5 space-y-6">
-            <div className="flex items-center gap-2 mb-4 text-nofx-gold">
-              <TerminalIcon className="w-6 h-6" />
-              <h3 className="text-xl font-bold">{labels.terminal}</h3>
-            </div>
-            <div className="h-64 bg-black rounded-lg overflow-hidden p-2 border border-gray-800">
-                <div ref={terminalRef} style={{ width: '100%', height: '100%' }} />
-            </div>
+          <div className="flex items-center gap-2 mb-4 text-nofx-gold">
+            <TerminalIcon className="w-6 h-6" />
+            <h3 className="text-xl font-bold">{labels.terminal}</h3>
+          </div>
+          <div className="h-64 bg-black rounded-lg overflow-hidden p-2 border border-gray-800">
+            <div ref={terminalRef} style={{ width: '100%', height: '100%' }} />
+          </div>
         </div>
       </div>
     </div>

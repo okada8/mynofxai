@@ -57,6 +57,9 @@ export const useTradersConfigStore = create<TradersConfigState>((set, get) => ({
       if (e.id === 'hyperliquid') {
         return e.hyperliquidWalletAddr && e.hyperliquidWalletAddr.trim() !== ''
       }
+      if (e.exchange_type === 'polymarket') {
+        return e.polymarketWalletAddr && e.polymarketWalletAddr.trim() !== ''
+      }
       // 修复: 添加 enabled 判断,与原始逻辑保持一致
       return e.enabled || (e.apiKey && e.apiKey.trim() !== '')
     })

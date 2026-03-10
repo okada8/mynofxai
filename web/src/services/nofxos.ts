@@ -114,7 +114,7 @@ export const nofxosApi = {
       if (json.success && json.data) {
         return {
           coins: json.data.coins || [],
-          desc: json.data.desc
+          desc: json.data.desc,
         }
       }
       return { coins: [] }
@@ -134,7 +134,7 @@ export const nofxosApi = {
       if (json.success && json.data) {
         return {
           rankings: json.data.rankings || [],
-          desc: json.data.desc
+          desc: json.data.desc,
         }
       }
       return { rankings: [] }
@@ -147,9 +147,14 @@ export const nofxosApi = {
   /**
    * Get Open Interest Top Ranking (Verified)
    */
-  getOITopRanking: async (duration = '1h', limit = 20): Promise<OIRankingItem[]> => {
+  getOITopRanking: async (
+    duration = '1h',
+    limit = 20
+  ): Promise<OIRankingItem[]> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/oi/top-ranking?duration=${duration}&limit=${limit}`)
+      const res = await fetch(
+        `${BASE_URL}/api/oi/top-ranking?duration=${duration}&limit=${limit}`
+      )
       const json = await handleResponse(res)
       if (json.success && json.data && json.data.positions) {
         return json.data.positions
@@ -164,9 +169,14 @@ export const nofxosApi = {
   /**
    * Get Open Interest Low Ranking (Verified)
    */
-  getOILowRanking: async (duration = '1h', limit = 20): Promise<OIRankingItem[]> => {
+  getOILowRanking: async (
+    duration = '1h',
+    limit = 20
+  ): Promise<OIRankingItem[]> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/oi/low-ranking?duration=${duration}&limit=${limit}`)
+      const res = await fetch(
+        `${BASE_URL}/api/oi/low-ranking?duration=${duration}&limit=${limit}`
+      )
       const json = await handleResponse(res)
       if (json.success && json.data && json.data.positions) {
         return json.data.positions
@@ -181,9 +191,14 @@ export const nofxosApi = {
   /**
    * Get Netflow Top Ranking (Verified)
    */
-  getNetflowTopRanking: async (duration = '30m', limit = 20): Promise<FundFlowItem[]> => {
+  getNetflowTopRanking: async (
+    duration = '30m',
+    limit = 20
+  ): Promise<FundFlowItem[]> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/netflow/top-ranking?duration=${duration}&limit=${limit}`)
+      const res = await fetch(
+        `${BASE_URL}/api/netflow/top-ranking?duration=${duration}&limit=${limit}`
+      )
       const json = await handleResponse(res)
       if (json.success && json.data && json.data.netflows) {
         return json.data.netflows
@@ -198,9 +213,14 @@ export const nofxosApi = {
   /**
    * Get Netflow Low Ranking (Verified)
    */
-  getNetflowLowRanking: async (duration = '30m', limit = 20): Promise<FundFlowItem[]> => {
+  getNetflowLowRanking: async (
+    duration = '30m',
+    limit = 20
+  ): Promise<FundFlowItem[]> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/netflow/low-ranking?duration=${duration}&limit=${limit}`)
+      const res = await fetch(
+        `${BASE_URL}/api/netflow/low-ranking?duration=${duration}&limit=${limit}`
+      )
       const json = await handleResponse(res)
       if (json.success && json.data && json.data.netflows) {
         return json.data.netflows
@@ -215,9 +235,14 @@ export const nofxosApi = {
   /**
    * Get Market Heatmap (Depth)
    */
-  getHeatmap: async (tradeType: 'future' | 'spot', limit = 20): Promise<HeatmapItem[]> => {
+  getHeatmap: async (
+    tradeType: 'future' | 'spot',
+    limit = 20
+  ): Promise<HeatmapItem[]> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/heatmap/list?trade=${tradeType}&limit=${limit}`)
+      const res = await fetch(
+        `${BASE_URL}/api/heatmap/list?trade=${tradeType}&limit=${limit}`
+      )
       const json = await handleResponse(res)
       if (json.success && json.data && json.data.heatmaps) {
         return json.data.heatmaps
@@ -239,7 +264,7 @@ export const nofxosApi = {
       if (json.success && json.data) {
         return {
           rates: json.data.rates || [],
-          desc: json.data.desc
+          desc: json.data.desc,
         }
       }
       return { rates: [] }
@@ -259,7 +284,7 @@ export const nofxosApi = {
       if (json.success && json.data) {
         return {
           rates: json.data.rates || [],
-          desc: json.data.desc
+          desc: json.data.desc,
         }
       }
       return { rates: [] }
@@ -279,7 +304,7 @@ export const nofxosApi = {
       if (json.success && json.data) {
         return {
           coins: json.data.coins || [],
-          desc: json.data.desc
+          desc: json.data.desc,
         }
       }
       return { coins: [] }
@@ -292,14 +317,24 @@ export const nofxosApi = {
   /**
    * Get Price Ranking (Verified)
    */
-  getPriceRanking: async (duration = '1h', limit = 20): Promise<PriceRankingResponse> => {
+  getPriceRanking: async (
+    duration = '1h',
+    limit = 20
+  ): Promise<PriceRankingResponse> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/price/ranking?duration=${duration}&limit=${limit}`)
+      const res = await fetch(
+        `${BASE_URL}/api/price/ranking?duration=${duration}&limit=${limit}`
+      )
       const json = await handleResponse(res)
-      if (json.success && json.data && json.data.data && json.data.data[duration]) {
+      if (
+        json.success &&
+        json.data &&
+        json.data.data &&
+        json.data.data[duration]
+      ) {
         return {
           top: json.data.data[duration].top || [],
-          low: json.data.data[duration].low || []
+          low: json.data.data[duration].low || [],
         }
       }
       return { top: [], low: [] }
@@ -307,5 +342,5 @@ export const nofxosApi = {
       console.error('Failed to fetch Price Ranking:', error)
       return { top: [], low: [] }
     }
-  }
+  },
 }

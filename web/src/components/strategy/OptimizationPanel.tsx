@@ -12,10 +12,12 @@ interface OptimizationPanelProps {
 
 export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
   const [strategies, setStrategies] = useState<Strategy[]>([])
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string>(strategyId || '')
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string>(
+    strategyId || ''
+  )
   const [isRunning, setIsRunning] = useState(false)
   const [taskId, setTaskId] = useState<string | null>(null)
-  
+
   const [config, setConfig] = useState({
     generations: 50,
     population_size: 100,
@@ -30,33 +32,42 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
     return await api.getOptimizationStatus(taskId)
   }, [taskId])
 
-  const { data: status, setPollingInterval } = useOptimizedPolling(fetchStatus, {
-    enabled: isRunning && !!taskId,
-    interval: 1000,
-    onSuccess: (data) => {
-      if (data.status === 'completed' || data.status === 'failed' || data.status === 'stopped') {
-        setIsRunning(false)
-        setPollingInterval(10000) // Slow down polling when finished (or stop if we disabled enabled)
-        if (data.status === 'completed') {
-          toast.success('Optimization completed!')
-        } else if (data.status === 'failed') {
-          toast.error(`Optimization failed: ${data.error}`)
+  const { data: status, setPollingInterval } = useOptimizedPolling(
+    fetchStatus,
+    {
+      enabled: isRunning && !!taskId,
+      interval: 1000,
+      onSuccess: (data) => {
+        if (
+          data.status === 'completed' ||
+          data.status === 'failed' ||
+          data.status === 'stopped'
+        ) {
+          setIsRunning(false)
+          setPollingInterval(10000) // Slow down polling when finished (or stop if we disabled enabled)
+          if (data.status === 'completed') {
+            toast.success('Optimization completed!')
+          } else if (data.status === 'failed') {
+            toast.error(`Optimization failed: ${data.error}`)
+          }
+        } else if (data.status === 'running') {
+          setPollingInterval(1000) // Ensure fast polling while running
         }
-      } else if (data.status === 'running') {
-        setPollingInterval(1000) // Ensure fast polling while running
-      }
-    },
-    onError: (err: any) => {
-      console.error('Poll error:', err)
-      // Handle 404 - Task not found
-      if (err.message && err.message.includes('404')) {
-        setIsRunning(false)
-        setTaskId(null)
-        localStorage.removeItem('optimization_task_id')
-        toast.error('Optimization task not found. It may have been stopped or expired.')
-      }
+      },
+      onError: (err: any) => {
+        console.error('Poll error:', err)
+        // Handle 404 - Task not found
+        if (err.message && err.message.includes('404')) {
+          setIsRunning(false)
+          setTaskId(null)
+          localStorage.removeItem('optimization_task_id')
+          toast.error(
+            'Optimization task not found. It may have been stopped or expired.'
+          )
+        }
+      },
     }
-  })
+  )
 
   useEffect(() => {
     loadStrategies()
@@ -93,7 +104,7 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
       setIsRunning(true)
       const res = await api.startOptimization({
         strategy_id: selectedStrategyId,
-        config: config
+        config: config,
       })
       setTaskId(res.task_id)
       localStorage.setItem('optimization_task_id', res.task_id)
@@ -149,7 +160,7 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
           <h3 className="font-semibold flex items-center gap-2 mb-4">
             <Settings className="w-4 h-4 text-[#848E9C]" /> Configuration
           </h3>
-          
+
           <div className="space-y-2">
             <label className="text-sm text-[#848E9C]">Target Strategy</label>
             <select
@@ -159,8 +170,10 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
               className="w-full bg-[#0B0E11] border border-[#2B3139] rounded p-2 text-sm text-[#EAECEF]"
             >
               <option value="">Select Strategy...</option>
-              {strategies.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+              {strategies.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </select>
           </div>
@@ -170,7 +183,9 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
             <input
               type="number"
               value={config.generations}
-              onChange={(e) => setConfig({ ...config, generations: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setConfig({ ...config, generations: parseInt(e.target.value) })
+              }
               disabled={isRunning}
               className="w-full bg-[#0B0E11] border border-[#2B3139] rounded p-2 text-sm text-[#EAECEF]"
             />
@@ -181,19 +196,31 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
             <input
               type="number"
               value={config.population_size}
-              onChange={(e) => setConfig({ ...config, population_size: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  population_size: parseInt(e.target.value),
+                })
+              }
               disabled={isRunning}
               className="w-full bg-[#0B0E11] border border-[#2B3139] rounded p-2 text-sm text-[#EAECEF]"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-[#848E9C]">Mutation Rate (0-1)</label>
+            <label className="text-sm text-[#848E9C]">
+              Mutation Rate (0-1)
+            </label>
             <input
               type="number"
               step="0.01"
               value={config.mutation_rate}
-              onChange={(e) => setConfig({ ...config, mutation_rate: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  mutation_rate: parseFloat(e.target.value),
+                })
+              }
               disabled={isRunning}
               className="w-full bg-[#0B0E11] border border-[#2B3139] rounded p-2 text-sm text-[#EAECEF]"
             />
@@ -207,7 +234,9 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-[#848E9C] opacity-50">
               <Activity className="w-16 h-16 mb-4" />
-              <p>Ready to optimize strategy parameters using Genetic Algorithms</p>
+              <p>
+                Ready to optimize strategy parameters using Genetic Algorithms
+              </p>
             </div>
           )}
         </div>

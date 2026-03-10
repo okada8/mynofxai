@@ -15,20 +15,23 @@ export function useBatchedUpdates<T>(
     timeoutRef.current = null
   }, [onProcessBatch])
 
-  const addUpdate = useCallback((update: T) => {
-    batchRef.current.push(update)
+  const addUpdate = useCallback(
+    (update: T) => {
+      batchRef.current.push(update)
 
-    if (!timeoutRef.current) {
-      timeoutRef.current = setTimeout(processBatch, interval)
-    }
-  }, [processBatch, interval])
+      if (!timeoutRef.current) {
+        timeoutRef.current = setTimeout(processBatch, interval)
+      }
+    },
+    [processBatch, interval]
+  )
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
-        // Process remaining items on unmount? 
+        // Process remaining items on unmount?
         // Usually better not to trigger state updates on unmount
       }
     }

@@ -29,15 +29,33 @@ export function AlphaFactorEditor({
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
       alphaFactors: { zh: 'Alpha 因子', en: 'Alpha Factors' },
-      alphaFactorsDesc: { zh: '配置影响交易决策的 Alpha 信号源及其权重', en: 'Configure Alpha signal sources and weights for trading decisions' },
-      liquidationClusters: { zh: '清算集群 (Liquidation)', en: 'Liquidation Clusters' },
-      liquidationDesc: { zh: '基于 CoinAnk 清算热力图，识别多空博弈关键位', en: 'Identify key levels based on CoinAnk liquidation heatmap' },
+      alphaFactorsDesc: {
+        zh: '配置影响交易决策的 Alpha 信号源及其权重',
+        en: 'Configure Alpha signal sources and weights for trading decisions',
+      },
+      liquidationClusters: {
+        zh: '清算集群 (Liquidation)',
+        en: 'Liquidation Clusters',
+      },
+      liquidationDesc: {
+        zh: '基于 CoinAnk 清算热力图，识别多空博弈关键位',
+        en: 'Identify key levels based on CoinAnk liquidation heatmap',
+      },
       netflowRanking: { zh: '资金流向 (NetFlow)', en: 'NetFlow Ranking' },
-      netflowDesc: { zh: '基于 NofxOS 机构/散户资金流向排行', en: 'Institutional/Retail fund flow ranking from NofxOS' },
+      netflowDesc: {
+        zh: '基于 NofxOS 机构/散户资金流向排行',
+        en: 'Institutional/Retail fund flow ranking from NofxOS',
+      },
       whaleActivity: { zh: '鲸鱼活动 (Whale)', en: 'Whale Activity' },
-      whaleDesc: { zh: '大额链上转账与交易所充提监控', en: 'Large on-chain transfers and exchange flow monitoring' },
+      whaleDesc: {
+        zh: '大额链上转账与交易所充提监控',
+        en: 'Large on-chain transfers and exchange flow monitoring',
+      },
       sentiment: { zh: '市场情绪 (Sentiment)', en: 'Market Sentiment' },
-      sentimentDesc: { zh: '社交媒体与新闻情绪分析', en: 'Social media and news sentiment analysis' },
+      sentimentDesc: {
+        zh: '社交媒体与新闻情绪分析',
+        en: 'Social media and news sentiment analysis',
+      },
       weight: { zh: '权重', en: 'Weight' },
     }
     return translations[key]?.[language] || key
@@ -67,14 +85,25 @@ export function AlphaFactorEditor({
 
         <div className="space-y-4">
           {/* Liquidation Clusters */}
-          <div className="p-4 rounded-lg" style={{ background: '#0B0E11', border: '1px solid #2B3139' }}>
+          <div
+            className="p-4 rounded-lg"
+            style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+          >
             <div className="flex items-center justify-between mb-2">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium" style={{ color: '#EAECEF' }}>
+                <label
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: '#EAECEF' }}
+                >
                   <input
                     type="checkbox"
                     checked={safeConfig.enable_liquidation_clusters}
-                    onChange={(e) => updateField('enable_liquidation_clusters', e.target.checked)}
+                    onChange={(e) =>
+                      updateField(
+                        'enable_liquidation_clusters',
+                        e.target.checked
+                      )
+                    }
                     disabled={disabled}
                     className="w-4 h-4 rounded border-gray-600 bg-transparent text-yellow-500 focus:ring-offset-0 focus:ring-0"
                   />
@@ -86,17 +115,28 @@ export function AlphaFactorEditor({
               </div>
               {safeConfig.enable_liquidation_clusters && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: '#848E9C' }}>{t('weight')}:</span>
+                  <span className="text-xs" style={{ color: '#848E9C' }}>
+                    {t('weight')}:
+                  </span>
                   <input
                     type="number"
                     value={safeConfig.liquidation_cluster_weight}
-                    onChange={(e) => updateField('liquidation_cluster_weight', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateField(
+                        'liquidation_cluster_weight',
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     disabled={disabled}
                     step={0.1}
                     min={0}
                     max={10}
                     className="w-16 px-2 py-1 rounded text-xs text-center"
-                    style={{ background: '#1E2329', border: '1px solid #2B3139', color: '#EAECEF' }}
+                    style={{
+                      background: '#1E2329',
+                      border: '1px solid #2B3139',
+                      color: '#EAECEF',
+                    }}
                   />
                 </div>
               )}
@@ -104,14 +144,22 @@ export function AlphaFactorEditor({
           </div>
 
           {/* NetFlow Ranking */}
-          <div className="p-4 rounded-lg" style={{ background: '#0B0E11', border: '1px solid #2B3139' }}>
+          <div
+            className="p-4 rounded-lg"
+            style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+          >
             <div className="flex items-center justify-between mb-2">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium" style={{ color: '#EAECEF' }}>
+                <label
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: '#EAECEF' }}
+                >
                   <input
                     type="checkbox"
                     checked={safeConfig.enable_netflow_ranking}
-                    onChange={(e) => updateField('enable_netflow_ranking', e.target.checked)}
+                    onChange={(e) =>
+                      updateField('enable_netflow_ranking', e.target.checked)
+                    }
                     disabled={disabled}
                     className="w-4 h-4 rounded border-gray-600 bg-transparent text-yellow-500 focus:ring-offset-0 focus:ring-0"
                   />
@@ -123,17 +171,28 @@ export function AlphaFactorEditor({
               </div>
               {safeConfig.enable_netflow_ranking && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: '#848E9C' }}>{t('weight')}:</span>
+                  <span className="text-xs" style={{ color: '#848E9C' }}>
+                    {t('weight')}:
+                  </span>
                   <input
                     type="number"
                     value={safeConfig.netflow_ranking_weight}
-                    onChange={(e) => updateField('netflow_ranking_weight', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateField(
+                        'netflow_ranking_weight',
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     disabled={disabled}
                     step={0.1}
                     min={0}
                     max={10}
                     className="w-16 px-2 py-1 rounded text-xs text-center"
-                    style={{ background: '#1E2329', border: '1px solid #2B3139', color: '#EAECEF' }}
+                    style={{
+                      background: '#1E2329',
+                      border: '1px solid #2B3139',
+                      color: '#EAECEF',
+                    }}
                   />
                 </div>
               )}
@@ -141,14 +200,22 @@ export function AlphaFactorEditor({
           </div>
 
           {/* Whale Activity */}
-          <div className="p-4 rounded-lg" style={{ background: '#0B0E11', border: '1px solid #2B3139' }}>
+          <div
+            className="p-4 rounded-lg"
+            style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+          >
             <div className="flex items-center justify-between mb-2">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium" style={{ color: '#EAECEF' }}>
+                <label
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: '#EAECEF' }}
+                >
                   <input
                     type="checkbox"
                     checked={safeConfig.enable_whale_activity}
-                    onChange={(e) => updateField('enable_whale_activity', e.target.checked)}
+                    onChange={(e) =>
+                      updateField('enable_whale_activity', e.target.checked)
+                    }
                     disabled={disabled}
                     className="w-4 h-4 rounded border-gray-600 bg-transparent text-yellow-500 focus:ring-offset-0 focus:ring-0"
                   />
@@ -160,17 +227,28 @@ export function AlphaFactorEditor({
               </div>
               {safeConfig.enable_whale_activity && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: '#848E9C' }}>{t('weight')}:</span>
+                  <span className="text-xs" style={{ color: '#848E9C' }}>
+                    {t('weight')}:
+                  </span>
                   <input
                     type="number"
                     value={safeConfig.whale_activity_weight}
-                    onChange={(e) => updateField('whale_activity_weight', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateField(
+                        'whale_activity_weight',
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     disabled={disabled}
                     step={0.1}
                     min={0}
                     max={10}
                     className="w-16 px-2 py-1 rounded text-xs text-center"
-                    style={{ background: '#1E2329', border: '1px solid #2B3139', color: '#EAECEF' }}
+                    style={{
+                      background: '#1E2329',
+                      border: '1px solid #2B3139',
+                      color: '#EAECEF',
+                    }}
                   />
                 </div>
               )}
@@ -178,14 +256,22 @@ export function AlphaFactorEditor({
           </div>
 
           {/* Sentiment Analysis */}
-          <div className="p-4 rounded-lg" style={{ background: '#0B0E11', border: '1px solid #2B3139' }}>
+          <div
+            className="p-4 rounded-lg"
+            style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+          >
             <div className="flex items-center justify-between mb-2">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium" style={{ color: '#EAECEF' }}>
+                <label
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: '#EAECEF' }}
+                >
                   <input
                     type="checkbox"
                     checked={safeConfig.enable_sentiment_analysis}
-                    onChange={(e) => updateField('enable_sentiment_analysis', e.target.checked)}
+                    onChange={(e) =>
+                      updateField('enable_sentiment_analysis', e.target.checked)
+                    }
                     disabled={disabled}
                     className="w-4 h-4 rounded border-gray-600 bg-transparent text-yellow-500 focus:ring-offset-0 focus:ring-0"
                   />
@@ -197,17 +283,28 @@ export function AlphaFactorEditor({
               </div>
               {safeConfig.enable_sentiment_analysis && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: '#848E9C' }}>{t('weight')}:</span>
+                  <span className="text-xs" style={{ color: '#848E9C' }}>
+                    {t('weight')}:
+                  </span>
                   <input
                     type="number"
                     value={safeConfig.sentiment_weight}
-                    onChange={(e) => updateField('sentiment_weight', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateField(
+                        'sentiment_weight',
+                        parseFloat(e.target.value) || 0
+                      )
+                    }
                     disabled={disabled}
                     step={0.1}
                     min={0}
                     max={10}
                     className="w-16 px-2 py-1 rounded text-xs text-center"
-                    style={{ background: '#1E2329', border: '1px solid #2B3139', color: '#EAECEF' }}
+                    style={{
+                      background: '#1E2329',
+                      border: '1px solid #2B3139',
+                      color: '#EAECEF',
+                    }}
                   />
                 </div>
               )}

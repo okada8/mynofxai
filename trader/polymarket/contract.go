@@ -22,6 +22,9 @@ const (
 	CLOBProxyAddr   = "0x9A8C4bd4d4259e2f9986f4D8f8eB8E5e7d25dA75"
 )
 
+// ERC20 ABI for USDC balance check
+const erc20ABI = `[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
+
 // Simple ABI for CTF Exchange (buy function)
 // We will load the full ABI from file if needed, but for now we embed the essential part
 // or use the abi.json file we created
@@ -75,13 +78,45 @@ func NewContractClient(rpcURL, privateKeyHex string) (*ContractClient, error) {
 		client,
 	)
 
+	// Load USDC ABI
+	usdcABI, err := abi.JSON(strings.NewReader(erc20ABI))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse USDC ABI: %w", err)
+	}
+
+	usdcToken := bind.NewBoundContract(
+		common.HexToAddress(USDCAddr),
+		usdcABI,
+		client,
+		client,
+		client,
+	)
+
 	return &ContractClient{
 		ethClient:   client,
 		privateKey:  privateKey,
 		walletAddr:  walletAddr,
 		chainID:     chainID,
 		ctfExchange: ctfExchange,
+		usdcToken:   usdcToken,
 	}, nil
+}
+
+// GetUSDCBalance returns the USDC balance of the wallet
+func (c *ContractClient) GetUSDCBalance() (*big.Int, error) {
+	var result []interface{}
+	err := c.usdcToken.Call(&bind.CallOpts{}, &result, "balanceOf", c.walletAddr)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("no result from balanceOf")
+	}
+	balance, ok := result[0].(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("invalid balance type")
+	}
+	return balance, nil
 }
 
 // BuyOutcomeToken implements the buy logic

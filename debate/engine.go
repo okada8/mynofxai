@@ -1020,7 +1020,7 @@ func (e *DebateEngine) ExecuteConsensus(sessionID string, executor TraderExecuto
 	tradeDecision := &kernel.Decision{
 		Symbol:          session.Symbol,
 		Action:          action,
-		Leverage:        session.FinalDecision.Leverage,
+		Leverage:        float64(session.FinalDecision.Leverage),
 		PositionSizeUSD: positionSizeUSD,
 		StopLoss:        stopLossPrice,
 		TakeProfit:      takeProfitPrice,

@@ -70,6 +70,9 @@ type StrategyConfig struct {
 	// Grid trading configuration (only used when StrategyType == "grid_trading")
 	GridConfig *GridStrategyConfig `json:"grid_config,omitempty"`
 
+	// Polymarket hybrid strategy configuration (only used when StrategyType == "polymarket_hybrid")
+	PolymarketConfig *PolymarketStrategyConfig `json:"polymarket_config,omitempty"`
+
 	// Multi-agent configuration (new in nofx 2.0)
 	MultiAgent *MultiAgentConfig `json:"multi_agent,omitempty"`
 }
@@ -156,6 +159,26 @@ type GridStrategyConfig struct {
 	EnableDirectionAdjust bool `json:"enable_direction_adjust"`
 	// Direction bias ratio for long_bias/short_bias modes (default 0.7 = 70%/30%)
 	DirectionBiasRatio float64 `json:"direction_bias_ratio"`
+}
+
+// PolymarketStrategyConfig polymarket hybrid strategy configuration
+type PolymarketStrategyConfig struct {
+	MaxPositionUSDC      float64                `json:"max_position_usdc"`
+	ProbabilityThreshold float64                `json:"probability_threshold"`
+	MinLiquidity         float64                `json:"min_liquidity"`
+	MaxDaysToExpiry      int                    `json:"max_days_to_expiry"`
+	MinDaysToExpiry      int                    `json:"min_days_to_expiry"`
+	RiskPerTrade         float64                `json:"risk_per_trade"`
+	StopLoss             float64                `json:"stop_loss"`
+	TakeProfit           float64                `json:"take_profit"`
+	SubStrategies        []PolymarketSubStrategy `json:"sub_strategies"`
+}
+
+// PolymarketSubStrategy polymarket sub-strategy configuration
+type PolymarketSubStrategy struct {
+	Name    string  `json:"name"`    // "probability_arbitrage", "time_decay", "market_making"
+	Weight  float64 `json:"weight"`  // 0.0 - 1.0
+	Enabled bool    `json:"enabled"`
 }
 
 // PromptSectionsConfig editable sections of System Prompt

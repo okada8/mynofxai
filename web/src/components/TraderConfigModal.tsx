@@ -3,7 +3,14 @@ import type { AIModel, Exchange, CreateTraderRequest, Strategy } from '../types'
 import { useLanguage } from '../contexts/LanguageContext'
 import { t } from '../i18n/translations'
 import { toast } from 'sonner'
-import { Pencil, Plus, X as IconX, Sparkles, ExternalLink, UserPlus } from 'lucide-react'
+import {
+  Pencil,
+  Plus,
+  X as IconX,
+  Sparkles,
+  ExternalLink,
+  UserPlus,
+} from 'lucide-react'
 import { httpClient } from '../lib/httpClient'
 
 // 提取下划线后面的名称部分
@@ -13,13 +20,29 @@ function getShortName(fullName: string): string {
 }
 
 // 交易所注册链接配置
-const EXCHANGE_REGISTRATION_LINKS: Record<string, { url: string; hasReferral?: boolean }> = {
-  binance: { url: 'https://www.binance.com/join?ref=NOFXENG', hasReferral: true },
+const EXCHANGE_REGISTRATION_LINKS: Record<
+  string,
+  { url: string; hasReferral?: boolean }
+> = {
+  binance: {
+    url: 'https://www.binance.com/join?ref=NOFXENG',
+    hasReferral: true,
+  },
   okx: { url: 'https://www.okx.com/join/1865360', hasReferral: true },
   bybit: { url: 'https://partner.bybit.com/b/83856', hasReferral: true },
-  hyperliquid: { url: 'https://app.hyperliquid.xyz/join/AITRADING', hasReferral: true },
-  aster: { url: 'https://www.asterdex.com/en/referral/fdfc0e', hasReferral: true },
-  lighter: { url: 'https://app.lighter.xyz/?referral=68151432', hasReferral: true },
+  hyperliquid: {
+    url: 'https://app.hyperliquid.xyz/join/AITRADING',
+    hasReferral: true,
+  },
+  aster: {
+    url: 'https://www.asterdex.com/en/referral/fdfc0e',
+    hasReferral: true,
+  },
+  lighter: {
+    url: 'https://app.lighter.xyz/?referral=68151432',
+    hasReferral: true,
+  },
+  polymarket: { url: 'https://polymarket.com/', hasReferral: false },
 }
 
 import type { TraderConfigData } from '../types'
@@ -75,19 +98,29 @@ export function TraderConfigModal({
   useEffect(() => {
     const fetchStrategies = async () => {
       try {
-        const result = await httpClient.get<{ strategies: Strategy[] }>('/api/strategies')
+        const result = await httpClient.get<{ strategies: Strategy[] }>(
+          '/api/strategies'
+        )
         // 处理后端直接返回数组或嵌套在 data 中的情况
-        const strategiesData = Array.isArray(result) ? result : result.strategies || (result.data as any)?.strategies || []
-        
+        const strategiesData = Array.isArray(result)
+          ? result
+          : result.strategies || (result.data as any)?.strategies || []
+
         if (Array.isArray(strategiesData)) {
           setStrategies(strategiesData)
           // 如果没有选择策略，默认选中激活的策略
           if (!formData.strategy_id && !isEditMode) {
-            const activeStrategy = strategiesData.find(s => s.is_active)
+            const activeStrategy = strategiesData.find((s) => s.is_active)
             if (activeStrategy) {
-              setFormData(prev => ({ ...prev, strategy_id: activeStrategy.id }))
+              setFormData((prev) => ({
+                ...prev,
+                strategy_id: activeStrategy.id,
+              }))
             } else if (strategiesData.length > 0) {
-              setFormData(prev => ({ ...prev, strategy_id: strategiesData[0].id }))
+              setFormData((prev) => ({
+                ...prev,
+                strategy_id: strategiesData[0].id,
+              }))
             }
           }
         }
@@ -127,7 +160,7 @@ export function TraderConfigModal({
 
   const handleFetchCurrentBalance = async () => {
     if (!isEditMode || !traderData?.trader_id) {
-       setBalanceFetchError(t('fetchBalanceEditModeOnly', language))
+      setBalanceFetchError(t('fetchBalanceEditModeOnly', language))
       return
     }
 
@@ -150,7 +183,7 @@ export function TraderConfigModal({
       }
     } catch (error) {
       console.error(t('balanceFetchFailed', language) + ':', error)
-       setBalanceFetchError(t('balanceFetchNetworkError', language))
+      setBalanceFetchError(t('balanceFetchNetworkError', language))
     } finally {
       setIsFetchingBalance(false)
     }
@@ -183,13 +216,13 @@ export function TraderConfigModal({
       })
       onClose()
     } catch (error) {
-       console.error(t('saveFailed', language) + ':', error)
+      console.error(t('saveFailed', language) + ':', error)
     } finally {
       setIsSaving(false)
     }
   }
 
-  const selectedStrategy = strategies.find(s => s.id === formData.strategy_id)
+  const selectedStrategy = strategies.find((s) => s.id === formData.strategy_id)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">
@@ -210,10 +243,14 @@ export function TraderConfigModal({
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#EAECEF]">
-                {isEditMode ? t('editTrader', language) : t('createTrader', language)}
+                {isEditMode
+                  ? t('editTrader', language)
+                  : t('createTrader', language)}
               </h2>
               <p className="text-sm text-[#848E9C] mt-1">
-                {isEditMode ? t('editTraderConfig', language) : t('selectStrategyAndConfigParams', language)}
+                {isEditMode
+                  ? t('editTraderConfig', language)
+                  : t('selectStrategyAndConfigParams', language)}
               </p>
             </div>
           </div>
@@ -233,7 +270,8 @@ export function TraderConfigModal({
           {/* Basic Info */}
           <div className="bg-[#0B0E11] border border-[#2B3139] rounded-lg p-5">
             <h3 className="text-lg font-semibold text-[#EAECEF] mb-5 flex items-center gap-2">
-              <span className="text-[#F0B90B]">1</span> {t('basicConfig', language)}
+              <span className="text-[#F0B90B]">1</span>{' '}
+              {t('basicConfig', language)}
             </h3>
             <div className="space-y-4">
               <div>
@@ -247,13 +285,13 @@ export function TraderConfigModal({
                     handleInputChange('trader_name', e.target.value)
                   }
                   className="w-full px-3 py-2 bg-[#0B0E11] border border-[#2B3139] rounded text-[#EAECEF] focus:border-[#F0B90B] focus:outline-none"
-                   placeholder={t('enterTraderNamePlaceholder', language)}
+                  placeholder={t('enterTraderNamePlaceholder', language)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-[#EAECEF] block mb-2">
-                  {t('aiModelRequired', language)}
+                    {t('aiModelRequired', language)}
                   </label>
                   <select
                     value={formData.ai_model}
@@ -271,7 +309,7 @@ export function TraderConfigModal({
                 </div>
                 <div>
                   <label className="text-sm text-[#EAECEF] block mb-2">
-                  {t('exchangeRequired', language)}
+                    {t('exchangeRequired', language)}
                   </label>
                   <select
                     value={formData.exchange_id}
@@ -282,36 +320,44 @@ export function TraderConfigModal({
                   >
                     {availableExchanges.map((exchange) => (
                       <option key={exchange.id} value={exchange.id}>
-                        {getShortName(exchange.name || exchange.exchange_type || exchange.id).toUpperCase()}
-                        {exchange.account_name ? ` - ${exchange.account_name}` : ''}
+                        {getShortName(
+                          exchange.name || exchange.exchange_type || exchange.id
+                        ).toUpperCase()}
+                        {exchange.account_name
+                          ? ` - ${exchange.account_name}`
+                          : ''}
                       </option>
                     ))}
                   </select>
                   {/* Exchange Registration Link */}
-                  {formData.exchange_id && (() => {
-                    // Find the selected exchange to get its type
-                    const selectedExchange = availableExchanges.find(e => e.id === formData.exchange_id)
-                    const exchangeType = selectedExchange?.exchange_type?.toLowerCase() || ''
-                    const regLink = EXCHANGE_REGISTRATION_LINKS[exchangeType]
-                    if (!regLink) return null
-                    return (
-                      <a
-                        href={regLink.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#848E9C] hover:text-[#F0B90B] transition-colors"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>{t('noExchangeAccount', language)}</span>
-                        {regLink.hasReferral && (
-                          <span className="px-1.5 py-0.5 bg-[#F0B90B]/10 text-[#F0B90B] rounded text-[10px]">
-                            {t('discount', language)}
-                          </span>
-                        )}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )
-                  })()}
+                  {formData.exchange_id &&
+                    (() => {
+                      // Find the selected exchange to get its type
+                      const selectedExchange = availableExchanges.find(
+                        (e) => e.id === formData.exchange_id
+                      )
+                      const exchangeType =
+                        selectedExchange?.exchange_type?.toLowerCase() || ''
+                      const regLink = EXCHANGE_REGISTRATION_LINKS[exchangeType]
+                      if (!regLink) return null
+                      return (
+                        <a
+                          href={regLink.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#848E9C] hover:text-[#F0B90B] transition-colors"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>{t('noExchangeAccount', language)}</span>
+                          {regLink.hasReferral && (
+                            <span className="px-1.5 py-0.5 bg-[#F0B90B]/10 text-[#F0B90B] rounded text-[10px]">
+                              {t('discount', language)}
+                            </span>
+                          )}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )
+                    })()}
                 </div>
               </div>
             </div>
@@ -320,7 +366,8 @@ export function TraderConfigModal({
           {/* Strategy Selection */}
           <div className="bg-[#0B0E11] border border-[#2B3139] rounded-lg p-5">
             <h3 className="text-lg font-semibold text-[#EAECEF] mb-5 flex items-center gap-2">
-              <span className="text-[#F0B90B]">2</span> {t('selectTradingStrategy', language)}
+              <span className="text-[#F0B90B]">2</span>{' '}
+              {t('selectTradingStrategy', language)}
               <Sparkles className="w-4 h-4 text-[#F0B90B]" />
             </h3>
             <div className="space-y-4">
@@ -340,13 +387,15 @@ export function TraderConfigModal({
                     <option key={strategy.id} value={strategy.id}>
                       {strategy.name}
                       {strategy.is_active ? ` (${t('active', language)})` : ''}
-                      {strategy.is_default ? ` (${t('default', language)})` : ''}
+                      {strategy.is_default
+                        ? ` (${t('default', language)})`
+                        : ''}
                     </option>
                   ))}
                 </select>
                 {strategies.length === 0 && (
-                    <p className="text-xs text-[#848E9C] mt-2">
-                      {t('noStrategyHint', language)}
+                  <p className="text-xs text-[#848E9C] mt-2">
+                    {t('noStrategyHint', language)}
                   </p>
                 )}
               </div>
@@ -355,23 +404,37 @@ export function TraderConfigModal({
               {selectedStrategy && (
                 <div className="mt-3 p-4 bg-[#1E2329] border border-[#2B3139] rounded-lg">
                   <div className="flex items-center gap-2">
-                      <span className="text-[#F0B90B] text-sm font-medium">
-                        {selectedStrategy?.name}
-                      </span>
-                      {selectedStrategy?.is_active ? t('active', language) : ''}
-                      {selectedStrategy?.is_default ? t('default', language) : ''}
-                    </div>
+                    <span className="text-[#F0B90B] text-sm font-medium">
+                      {selectedStrategy?.name}
+                    </span>
+                    {selectedStrategy?.is_active ? t('active', language) : ''}
+                    {selectedStrategy?.is_default ? t('default', language) : ''}
+                  </div>
                   <p className="text-sm text-[#848E9C] mb-2">
-                    {selectedStrategy.description || (language === 'zh' ? '无描述' : 'No description')}
+                    {selectedStrategy.description ||
+                      (language === 'zh' ? '无描述' : 'No description')}
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-xs text-[#848E9C]">
                     <div>
-                      {t('coinSource', language)}: {selectedStrategy.config.coin_source.source_type === 'static' ? '固定币种' :
-                        selectedStrategy.config.coin_source.source_type === 'ai500' ? 'AI500' :
-                        selectedStrategy.config.coin_source.source_type === 'oi_top' ? 'OI Top' : '混合'}
+                      {t('coinSource', language)}:{' '}
+                      {selectedStrategy.config.coin_source.source_type ===
+                      'static'
+                        ? '固定币种'
+                        : selectedStrategy.config.coin_source.source_type ===
+                            'ai500'
+                          ? 'AI500'
+                          : selectedStrategy.config.coin_source.source_type ===
+                              'oi_top'
+                            ? 'OI Top'
+                            : '混合'}
                     </div>
                     <div>
-                      {t('marginLimit', language)}: {((selectedStrategy.config.risk_control?.max_margin_usage || 0.9) * 100).toFixed(0)}%
+                      {t('marginLimit', language)}:{' '}
+                      {(
+                        (selectedStrategy.config.risk_control
+                          ?.max_margin_usage || 0.9) * 100
+                      ).toFixed(0)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -382,7 +445,8 @@ export function TraderConfigModal({
           {/* Trading Parameters */}
           <div className="bg-[#0B0E11] border border-[#2B3139] rounded-lg p-5">
             <h3 className="text-lg font-semibold text-[#EAECEF] mb-5 flex items-center gap-2">
-              <span className="text-[#F0B90B]">3</span> {t('tradingParams', language)}
+              <span className="text-[#F0B90B]">3</span>{' '}
+              {t('tradingParams', language)}
             </h3>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -450,7 +514,9 @@ export function TraderConfigModal({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => handleInputChange('show_in_competition', true)}
+                    onClick={() =>
+                      handleInputChange('show_in_competition', true)
+                    }
                     className={`flex-1 px-3 py-2 rounded text-sm ${
                       formData.show_in_competition
                         ? 'bg-[#F0B90B] text-black'
@@ -461,7 +527,9 @@ export function TraderConfigModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleInputChange('show_in_competition', false)}
+                    onClick={() =>
+                      handleInputChange('show_in_competition', false)
+                    }
                     className={`flex-1 px-3 py-2 rounded text-sm ${
                       !formData.show_in_competition
                         ? 'bg-[#F0B90B] text-black'
@@ -471,8 +539,8 @@ export function TraderConfigModal({
                     {t('hide', language)}
                   </button>
                 </div>
-                  <p className="text-xs text-[#848E9C] mt-1">
-                    {t('hiddenInCompetition', language)}
+                <p className="text-xs text-[#848E9C] mt-1">
+                  {t('hiddenInCompetition', language)}
                 </p>
               </div>
 
@@ -489,7 +557,9 @@ export function TraderConfigModal({
                       disabled={isFetchingBalance}
                       className="px-3 py-1 text-xs bg-[#F0B90B] text-black rounded hover:bg-[#E1A706] transition-colors disabled:bg-[#848E9C] disabled:cursor-not-allowed"
                     >
-                      {isFetchingBalance ? t('fetching', language) : t('fetchCurrentBalance', language)}
+                      {isFetchingBalance
+                        ? t('fetching', language)
+                        : t('fetchCurrentBalance', language)}
                     </button>
                   </div>
                   <input
@@ -505,8 +575,8 @@ export function TraderConfigModal({
                     min="100"
                     step="0.01"
                   />
-                    <p className="text-xs text-[#848E9C] mt-1">
-                      {t('balanceUpdateHint', language)}
+                  <p className="text-xs text-[#848E9C] mt-1">
+                    {t('balanceUpdateHint', language)}
                   </p>
                   {balanceFetchError && (
                     <p className="text-xs text-red-500 mt-1">
@@ -540,7 +610,6 @@ export function TraderConfigModal({
               )}
             </div>
           </div>
-
         </div>
 
         {/* Footer */}
@@ -562,7 +631,11 @@ export function TraderConfigModal({
               }
               className="px-8 py-3 bg-gradient-to-r from-[#F0B90B] to-[#E1A706] text-black rounded-lg hover:from-[#E1A706] hover:to-[#D4951E] transition-all duration-200 disabled:bg-[#848E9C] disabled:cursor-not-allowed font-medium shadow-lg"
             >
-              {isSaving ? t('saving', language) : isEditMode ? t('editTrader', language) : t('createTraderButton', language)}
+              {isSaving
+                ? t('saving', language)
+                : isEditMode
+                  ? t('editTrader', language)
+                  : t('createTraderButton', language)}
             </button>
           )}
         </div>

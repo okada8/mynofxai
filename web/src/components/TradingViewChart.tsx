@@ -79,7 +79,7 @@ function TradingViewChartComponent({
     if (defaultExchange && defaultExchange !== exchange) {
       const normalizedExchange = defaultExchange.toUpperCase()
       // console.log('[TradingViewChart] 更新交易所:', normalizedExchange)
-      if (EXCHANGES.some(e => e.id === normalizedExchange)) {
+      if (EXCHANGES.some((e) => e.id === normalizedExchange)) {
         setExchange(normalizedExchange)
       }
     }
@@ -125,7 +125,8 @@ function TradingViewChartComponent({
       height: '100%',
       symbol: getFullSymbol(),
       interval: timeInterval,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai',
+      timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai',
       theme: 'dark',
       style: '1',
       locale: language === 'zh' ? 'zh_CN' : 'en',
@@ -165,11 +166,14 @@ function TradingViewChartComponent({
 
   return (
     <div
-      className={`${embedded ? 'h-full' : 'binance-card'} overflow-hidden flex flex-col ${embedded ? '' : 'animate-fade-in'} ${isFullscreen
-          ? 'fixed inset-0 z-50 rounded-none'
-          : ''
-        }`}
-      style={isFullscreen ? { background: '#0B0E11' } : { height: typeof height === 'number' ? height : height }}
+      className={`${embedded ? 'h-full' : 'binance-card'} overflow-hidden flex flex-col ${embedded ? '' : 'animate-fade-in'} ${
+        isFullscreen ? 'fixed inset-0 z-50 rounded-none' : ''
+      }`}
+      style={
+        isFullscreen
+          ? { background: '#0B0E11' }
+          : { height: typeof height === 'number' ? height : height }
+      }
     >
       {/* Header */}
       <div
@@ -189,7 +193,9 @@ function TradingViewChartComponent({
         )}
 
         {/* Controls */}
-        <div className={`flex flex-wrap items-center gap-2 ${embedded ? '' : 'ml-auto'}`}>
+        <div
+          className={`flex flex-wrap items-center gap-2 ${embedded ? '' : 'ml-auto'}`}
+        >
           {/* Exchange Selector */}
           <div className="relative">
             <button
@@ -266,13 +272,20 @@ function TradingViewChartComponent({
                 }}
               >
                 {/* Custom Input */}
-                <div className="px-3 pb-2" style={{ borderBottom: '1px solid #2B3139' }}>
+                <div
+                  className="px-3 pb-2"
+                  style={{ borderBottom: '1px solid #2B3139' }}
+                >
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={customSymbol}
-                      onChange={(e) => setCustomSymbol(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCustomSymbolSubmit()}
+                      onChange={(e) =>
+                        setCustomSymbol(e.target.value.toUpperCase())
+                      }
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && handleCustomSymbolSubmit()
+                      }
                       placeholder={t('enterSymbol', language)}
                       className="flex-1 px-3 py-1.5 rounded text-sm"
                       style={{
@@ -339,7 +352,8 @@ function TradingViewChartComponent({
                 onClick={() => setTimeInterval(int.id)}
                 className="px-2 py-1 rounded text-xs font-medium transition-all"
                 style={{
-                  background: timeInterval === int.id ? '#F0B90B' : 'transparent',
+                  background:
+                    timeInterval === int.id ? '#F0B90B' : 'transparent',
                   color: timeInterval === int.id ? '#0B0E11' : '#848E9C',
                 }}
               >
@@ -357,12 +371,22 @@ function TradingViewChartComponent({
               color: isFullscreen ? '#0B0E11' : '#848E9C',
               border: '1px solid #2B3139',
             }}
-            title={isFullscreen ? t('exitFullscreen', language) : t('fullscreen', language)}
+            title={
+              isFullscreen
+                ? t('exitFullscreen', language)
+                : t('fullscreen', language)
+            }
           >
             {isFullscreen ? (
               <X className="w-4 h-4" />
             ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
               </svg>
             )}

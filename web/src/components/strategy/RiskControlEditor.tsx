@@ -23,44 +23,110 @@ export function RiskControlEditor({
       // ... existing translations ...
       positionLimits: { zh: '仓位限制', en: 'Position Limits' },
       maxPositions: { zh: '最大持仓数量', en: 'Max Positions' },
-      maxPositionsDesc: { zh: '同时持有的最大币种数量', en: 'Maximum coins held simultaneously' },
+      maxPositionsDesc: {
+        zh: '同时持有的最大币种数量',
+        en: 'Maximum coins held simultaneously',
+      },
       // Trading leverage (exchange leverage)
-      tradingLeverage: { zh: '交易杠杆（交易所杠杆）', en: 'Trading Leverage (Exchange)' },
-      btcEthLeverage: { zh: 'BTC/ETH 交易杠杆', en: 'BTC/ETH Trading Leverage' },
-      btcEthLeverageDesc: { zh: '交易所开仓使用的杠杆倍数', en: 'Exchange leverage for opening positions' },
+      tradingLeverage: {
+        zh: '交易杠杆（交易所杠杆）',
+        en: 'Trading Leverage (Exchange)',
+      },
+      btcEthLeverage: {
+        zh: 'BTC/ETH 交易杠杆',
+        en: 'BTC/ETH Trading Leverage',
+      },
+      btcEthLeverageDesc: {
+        zh: '交易所开仓使用的杠杆倍数',
+        en: 'Exchange leverage for opening positions',
+      },
       altcoinLeverage: { zh: '山寨币交易杠杆', en: 'Altcoin Trading Leverage' },
-      altcoinLeverageDesc: { zh: '交易所开仓使用的杠杆倍数', en: 'Exchange leverage for opening positions' },
+      altcoinLeverageDesc: {
+        zh: '交易所开仓使用的杠杆倍数',
+        en: 'Exchange leverage for opening positions',
+      },
       // Position value ratio (risk control) - CODE ENFORCED
-      positionValueRatio: { zh: '仓位价值比例（代码强制）', en: 'Position Value Ratio (CODE ENFORCED)' },
-      positionValueRatioDesc: { zh: '单仓位名义价值 / 账户净值，由代码强制执行', en: 'Position notional value / equity, enforced by code' },
-      btcEthPositionValueRatio: { zh: 'BTC/ETH 仓位价值比例', en: 'BTC/ETH Position Value Ratio' },
-      btcEthPositionValueRatioDesc: { zh: '单仓最大名义价值 = 净值 × 此值（代码强制）', en: 'Max position value = equity × this ratio (CODE ENFORCED)' },
-      altcoinPositionValueRatio: { zh: '山寨币仓位价值比例', en: 'Altcoin Position Value Ratio' },
-      altcoinPositionValueRatioDesc: { zh: '单仓最大名义价值 = 净值 × 此值（代码强制）', en: 'Max position value = equity × this ratio (CODE ENFORCED)' },
+      positionValueRatio: {
+        zh: '仓位价值比例（代码强制）',
+        en: 'Position Value Ratio (CODE ENFORCED)',
+      },
+      positionValueRatioDesc: {
+        zh: '单仓位名义价值 / 账户净值，由代码强制执行',
+        en: 'Position notional value / equity, enforced by code',
+      },
+      btcEthPositionValueRatio: {
+        zh: 'BTC/ETH 仓位价值比例',
+        en: 'BTC/ETH Position Value Ratio',
+      },
+      btcEthPositionValueRatioDesc: {
+        zh: '单仓最大名义价值 = 净值 × 此值（代码强制）',
+        en: 'Max position value = equity × this ratio (CODE ENFORCED)',
+      },
+      altcoinPositionValueRatio: {
+        zh: '山寨币仓位价值比例',
+        en: 'Altcoin Position Value Ratio',
+      },
+      altcoinPositionValueRatioDesc: {
+        zh: '单仓最大名义价值 = 净值 × 此值（代码强制）',
+        en: 'Max position value = equity × this ratio (CODE ENFORCED)',
+      },
       riskParameters: { zh: '风险参数', en: 'Risk Parameters' },
       minRiskReward: { zh: '最小风险回报比', en: 'Min Risk/Reward Ratio' },
-      minRiskRewardDesc: { zh: '开仓要求的最低盈亏比', en: 'Minimum profit ratio for opening' },
-      maxMarginUsage: { zh: '最大保证金使用率（代码强制）', en: 'Max Margin Usage (CODE ENFORCED)' },
-      maxMarginUsageDesc: { zh: '保证金使用率上限，由代码强制执行', en: 'Maximum margin utilization, enforced by code' },
+      minRiskRewardDesc: {
+        zh: '开仓要求的最低盈亏比',
+        en: 'Minimum profit ratio for opening',
+      },
+      maxMarginUsage: {
+        zh: '最大保证金使用率（代码强制）',
+        en: 'Max Margin Usage (CODE ENFORCED)',
+      },
+      maxMarginUsageDesc: {
+        zh: '保证金使用率上限，由代码强制执行',
+        en: 'Maximum margin utilization, enforced by code',
+      },
       entryRequirements: { zh: '开仓要求', en: 'Entry Requirements' },
       minPositionSize: { zh: '最小开仓金额', en: 'Min Position Size' },
-      minPositionSizeDesc: { zh: 'USDT 最小名义价值', en: 'Minimum notional value in USDT' },
+      minPositionSizeDesc: {
+        zh: 'USDT 最小名义价值',
+        en: 'Minimum notional value in USDT',
+      },
       minConfidence: { zh: '最小信心度', en: 'Min Confidence' },
-      minConfidenceDesc: { zh: 'AI 开仓信心度阈值', en: 'AI confidence threshold for entry' },
-      
+      minConfidenceDesc: {
+        zh: 'AI 开仓信心度阈值',
+        en: 'AI confidence threshold for entry',
+      },
+
       // Enhanced Risk Control
       enhancedRisk: { zh: '高级风控 (2.0)', en: 'Enhanced Risk Control (2.0)' },
-      enhancedRiskDesc: { zh: '动态风控与账户级保护设置', en: 'Dynamic risk control and account-level protection' },
+      enhancedRiskDesc: {
+        zh: '动态风控与账户级保护设置',
+        en: 'Dynamic risk control and account-level protection',
+      },
       maxDrawdown: { zh: '最大回撤保护', en: 'Max Drawdown Protection' },
-      maxDrawdownDesc: { zh: '账户净值回撤达到此比例时停止交易', en: 'Stop trading when account drawdown reaches this %' },
+      maxDrawdownDesc: {
+        zh: '账户净值回撤达到此比例时停止交易',
+        en: 'Stop trading when account drawdown reaches this %',
+      },
       dailyLoss: { zh: '每日亏损限额', en: 'Daily Loss Limit' },
-      dailyLossDesc: { zh: '单日亏损达到此比例时停止交易', en: 'Stop trading when daily loss reaches this %' },
+      dailyLossDesc: {
+        zh: '单日亏损达到此比例时停止交易',
+        en: 'Stop trading when daily loss reaches this %',
+      },
       varLimit: { zh: 'VaR 风险值限制', en: 'Value at Risk (VaR) Limit' },
-      varLimitDesc: { zh: '投资组合风险值达到此比例时报警（95%置信度）', en: 'Alert when portfolio VaR reaches this % (95% confidence)' },
+      varLimitDesc: {
+        zh: '投资组合风险值达到此比例时报警（95%置信度）',
+        en: 'Alert when portfolio VaR reaches this % (95% confidence)',
+      },
       volatilityAdj: { zh: '波动率杠杆调整', en: 'Volatility Leverage Adj' },
-      volatilityAdjDesc: { zh: '基于市场波动率自动降低杠杆', en: 'Auto-reduce leverage based on market volatility' },
+      volatilityAdjDesc: {
+        zh: '基于市场波动率自动降低杠杆',
+        en: 'Auto-reduce leverage based on market volatility',
+      },
       liquidationDist: { zh: '强平距离保护', en: 'Min Liquidation Distance' },
-      liquidationDistDesc: { zh: '维持强平价格距离当前价格的最小百分比', en: 'Minimum distance % from current price to liquidation price' },
+      liquidationDistDesc: {
+        zh: '维持强平价格距离当前价格的最小百分比',
+        en: 'Minimum distance % from current price to liquidation price',
+      },
     }
     return translations[key]?.[language] || key
   }
@@ -229,7 +295,10 @@ export function RiskControlEditor({
                 type="range"
                 value={config.btc_eth_max_position_value_ratio ?? 5}
                 onChange={(e) =>
-                  updateField('btc_eth_max_position_value_ratio', parseFloat(e.target.value))
+                  updateField(
+                    'btc_eth_max_position_value_ratio',
+                    parseFloat(e.target.value)
+                  )
                 }
                 disabled={disabled}
                 min={0.5}
@@ -261,7 +330,10 @@ export function RiskControlEditor({
                 type="range"
                 value={config.altcoin_max_position_value_ratio ?? 1}
                 onChange={(e) =>
-                  updateField('altcoin_max_position_value_ratio', parseFloat(e.target.value))
+                  updateField(
+                    'altcoin_max_position_value_ratio',
+                    parseFloat(e.target.value)
+                  )
                 }
                 disabled={disabled}
                 min={0.5}
@@ -306,7 +378,10 @@ export function RiskControlEditor({
                 type="number"
                 value={config.min_risk_reward_ratio ?? 3}
                 onChange={(e) =>
-                  updateField('min_risk_reward_ratio', parseFloat(e.target.value) || 3)
+                  updateField(
+                    'min_risk_reward_ratio',
+                    parseFloat(e.target.value) || 3
+                  )
                 }
                 disabled={disabled}
                 min={1}
@@ -337,14 +412,20 @@ export function RiskControlEditor({
                 type="range"
                 value={(config.max_margin_usage ?? 0.9) * 100}
                 onChange={(e) =>
-                  updateField('max_margin_usage', parseInt(e.target.value) / 100)
+                  updateField(
+                    'max_margin_usage',
+                    parseInt(e.target.value) / 100
+                  )
                 }
                 disabled={disabled}
                 min={10}
                 max={100}
                 className="flex-1 accent-green-500"
               />
-              <span className="w-12 text-center font-mono" style={{ color: '#0ECB81' }}>
+              <span
+                className="w-12 text-center font-mono"
+                style={{ color: '#0ECB81' }}
+              >
                 {Math.round((config.max_margin_usage ?? 0.9) * 100)}%
               </span>
             </div>
@@ -377,7 +458,10 @@ export function RiskControlEditor({
                 type="number"
                 value={config.min_position_size ?? 12}
                 onChange={(e) =>
-                  updateField('min_position_size', parseFloat(e.target.value) || 12)
+                  updateField(
+                    'min_position_size',
+                    parseFloat(e.target.value) || 12
+                  )
                 }
                 disabled={disabled}
                 min={10}
@@ -417,7 +501,10 @@ export function RiskControlEditor({
                 max={100}
                 className="flex-1 accent-green-500"
               />
-              <span className="w-12 text-center font-mono" style={{ color: '#0ECB81' }}>
+              <span
+                className="w-12 text-center font-mono"
+                style={{ color: '#0ECB81' }}
+              >
                 {config.min_confidence ?? 75}
               </span>
             </div>
@@ -444,7 +531,10 @@ export function RiskControlEditor({
               className="p-4 rounded-lg"
               style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
             >
-              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: '#EAECEF' }}
+              >
                 {t('maxDrawdown')}
               </label>
               <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
@@ -455,14 +545,20 @@ export function RiskControlEditor({
                   type="range"
                   value={safeEnhancedConfig.max_drawdown_pct}
                   onChange={(e) =>
-                    updateEnhancedField('max_drawdown_pct', parseInt(e.target.value))
+                    updateEnhancedField(
+                      'max_drawdown_pct',
+                      parseInt(e.target.value)
+                    )
                   }
                   disabled={disabled}
                   min={5}
                   max={50}
                   className="flex-1 accent-red-500"
                 />
-                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                <span
+                  className="w-12 text-center font-mono"
+                  style={{ color: '#F6465D' }}
+                >
                   {safeEnhancedConfig.max_drawdown_pct}%
                 </span>
               </div>
@@ -473,7 +569,10 @@ export function RiskControlEditor({
               className="p-4 rounded-lg"
               style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
             >
-              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: '#EAECEF' }}
+              >
                 {t('dailyLoss')}
               </label>
               <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
@@ -484,14 +583,20 @@ export function RiskControlEditor({
                   type="range"
                   value={safeEnhancedConfig.daily_loss_limit_pct}
                   onChange={(e) =>
-                    updateEnhancedField('daily_loss_limit_pct', parseInt(e.target.value))
+                    updateEnhancedField(
+                      'daily_loss_limit_pct',
+                      parseInt(e.target.value)
+                    )
                   }
                   disabled={disabled}
                   min={1}
                   max={20}
                   className="flex-1 accent-red-500"
                 />
-                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                <span
+                  className="w-12 text-center font-mono"
+                  style={{ color: '#F6465D' }}
+                >
                   {safeEnhancedConfig.daily_loss_limit_pct}%
                 </span>
               </div>
@@ -502,7 +607,10 @@ export function RiskControlEditor({
               className="p-4 rounded-lg"
               style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
             >
-              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: '#EAECEF' }}
+              >
                 {t('varLimit')}
               </label>
               <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
@@ -513,7 +621,10 @@ export function RiskControlEditor({
                   type="range"
                   value={safeEnhancedConfig.var_limit_pct ?? 5}
                   onChange={(e) =>
-                    updateEnhancedField('var_limit_pct', parseInt(e.target.value))
+                    updateEnhancedField(
+                      'var_limit_pct',
+                      parseInt(e.target.value)
+                    )
                   }
                   disabled={disabled}
                   min={1}
@@ -521,7 +632,10 @@ export function RiskControlEditor({
                   step={0.5}
                   className="flex-1 accent-orange-500"
                 />
-                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                <span
+                  className="w-12 text-center font-mono"
+                  style={{ color: '#F6465D' }}
+                >
                   {safeEnhancedConfig.var_limit_pct ?? 5}%
                 </span>
               </div>
@@ -532,7 +646,10 @@ export function RiskControlEditor({
               className="p-4 rounded-lg"
               style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
             >
-              <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: '#EAECEF' }}
+              >
                 {t('liquidationDist')}
               </label>
               <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
@@ -543,14 +660,20 @@ export function RiskControlEditor({
                   type="range"
                   value={safeEnhancedConfig.min_distance_to_liquidation}
                   onChange={(e) =>
-                    updateEnhancedField('min_distance_to_liquidation', parseInt(e.target.value))
+                    updateEnhancedField(
+                      'min_distance_to_liquidation',
+                      parseInt(e.target.value)
+                    )
                   }
                   disabled={disabled}
                   min={1}
                   max={20}
                   className="flex-1 accent-red-500"
                 />
-                <span className="w-12 text-center font-mono" style={{ color: '#F6465D' }}>
+                <span
+                  className="w-12 text-center font-mono"
+                  style={{ color: '#F6465D' }}
+                >
                   {safeEnhancedConfig.min_distance_to_liquidation}%
                 </span>
               </div>
@@ -562,7 +685,10 @@ export function RiskControlEditor({
               style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
             >
               <div>
-                <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
+                <label
+                  className="block text-sm mb-1"
+                  style={{ color: '#EAECEF' }}
+                >
                   {t('volatilityAdj')}
                 </label>
                 <p className="text-xs" style={{ color: '#848E9C' }}>
@@ -574,7 +700,12 @@ export function RiskControlEditor({
                   type="checkbox"
                   className="sr-only peer"
                   checked={safeEnhancedConfig.max_leverage_volatility_adj}
-                  onChange={(e) => updateEnhancedField('max_leverage_volatility_adj', e.target.checked)}
+                  onChange={(e) =>
+                    updateEnhancedField(
+                      'max_leverage_volatility_adj',
+                      e.target.checked
+                    )
+                  }
                   disabled={disabled}
                 />
                 <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>

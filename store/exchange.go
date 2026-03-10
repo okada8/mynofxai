@@ -37,6 +37,9 @@ type Exchange struct {
 	LighterPrivateKey       crypto.EncryptedString `gorm:"column:lighter_private_key;default:''" json:"lighterPrivateKey"`
 	LighterAPIKeyPrivateKey crypto.EncryptedString `gorm:"column:lighter_api_key_private_key;default:''" json:"lighterAPIKeyPrivateKey"`
 	LighterAPIKeyIndex      int             `gorm:"column:lighter_api_key_index;default:0" json:"lighterAPIKeyIndex"`
+	PolymarketWalletAddr    string          `gorm:"column:polymarket_wallet_addr;default:''" json:"polymarketWalletAddr"`
+	PolymarketPrivateKey    crypto.EncryptedString `gorm:"column:polymarket_private_key;default:''" json:"polymarketPrivateKey"`
+	PolymarketRPCURL        string          `gorm:"column:polymarket_rpc_url;default:''" json:"polymarketRPCURL"`
 	CreatedAt               time.Time       `json:"created_at"`
 	UpdatedAt               time.Time       `json:"updated_at"`
 }
@@ -174,6 +177,8 @@ func getExchangeNameAndType(exchangeType string) (name string, typ string) {
 		return "Aster DEX", "dex"
 	case "lighter":
 		return "LIGHTER DEX", "dex"
+	case "polymarket":
+		return "Polymarket", "dex"
 	case "indodax":
 		return "Indodax Spot", "cex"
 	default:
@@ -186,7 +191,8 @@ func (s *ExchangeStore) Create(userID, exchangeType, accountName string, enabled
 	apiKey, secretKey, passphrase string, testnet bool,
 	hyperliquidWalletAddr string, hyperliquidUnifiedAcct bool,
 	asterUser, asterSigner, asterPrivateKey,
-	lighterWalletAddr, lighterPrivateKey, lighterApiKeyPrivateKey string, lighterApiKeyIndex int) (string, error) {
+	lighterWalletAddr, lighterPrivateKey, lighterApiKeyPrivateKey string, lighterApiKeyIndex int,
+	polymarketWalletAddr, polymarketPrivateKey, polymarketRPCURL string) (string, error) {
 
 	id := uuid.New().String()
 	name, typ := getExchangeNameAndType(exchangeType)
@@ -219,6 +225,9 @@ func (s *ExchangeStore) Create(userID, exchangeType, accountName string, enabled
 		LighterPrivateKey:       crypto.EncryptedString(lighterPrivateKey),
 		LighterAPIKeyPrivateKey: crypto.EncryptedString(lighterApiKeyPrivateKey),
 		LighterAPIKeyIndex:      lighterApiKeyIndex,
+		PolymarketWalletAddr:    polymarketWalletAddr,
+		PolymarketPrivateKey:    crypto.EncryptedString(polymarketPrivateKey),
+		PolymarketRPCURL:        polymarketRPCURL,
 	}
 
 	if err := s.db.Create(exchange).Error; err != nil {
@@ -230,20 +239,23 @@ func (s *ExchangeStore) Create(userID, exchangeType, accountName string, enabled
 // Update updates exchange configuration by UUID
 func (s *ExchangeStore) Update(userID, id string, enabled bool, apiKey, secretKey, passphrase string, testnet bool,
 	hyperliquidWalletAddr string, hyperliquidUnifiedAcct bool,
-	asterUser, asterSigner, asterPrivateKey, lighterWalletAddr, lighterPrivateKey, lighterApiKeyPrivateKey string, lighterApiKeyIndex int) error {
+	asterUser, asterSigner, asterPrivateKey, lighterWalletAddr, lighterPrivateKey, lighterApiKeyPrivateKey string, lighterApiKeyIndex int,
+	polymarketWalletAddr, polymarketPrivateKey, polymarketRPCURL string) error {
 
 	logger.Debugf("🔧 ExchangeStore.Update: userID=%s, id=%s, enabled=%v", userID, id, enabled)
 
 	updates := map[string]interface{}{
-		"enabled":                       enabled,
-		"testnet":                       testnet,
-		"hyperliquid_wallet_addr":       hyperliquidWalletAddr,
-		"hyperliquid_unified_account":   hyperliquidUnifiedAcct,
-		"aster_user":                    asterUser,
-		"aster_signer":            asterSigner,
-		"lighter_wallet_addr":     lighterWalletAddr,
-		"lighter_api_key_index":   lighterApiKeyIndex,
-		"updated_at":              time.Now().UTC(),
+		"enabled":                     enabled,
+		"testnet":                     testnet,
+		"hyperliquid_wallet_addr":     hyperliquidWalletAddr,
+		"hyperliquid_unified_account": hyperliquidUnifiedAcct,
+		"aster_user":                  asterUser,
+		"aster_signer":                asterSigner,
+		"lighter_wallet_addr":         lighterWalletAddr,
+		"lighter_api_key_index":       lighterApiKeyIndex,
+		"polymarket_wallet_addr":      polymarketWalletAddr,
+		"polymarket_rpc_url":          polymarketRPCURL,
+		"updated_at":                  time.Now().UTC(),
 	}
 
 	// Only update encrypted fields if not empty
@@ -264,6 +276,9 @@ func (s *ExchangeStore) Update(userID, id string, enabled bool, apiKey, secretKe
 	}
 	if lighterApiKeyPrivateKey != "" {
 		updates["lighter_api_key_private_key"] = crypto.EncryptedString(lighterApiKeyPrivateKey)
+	}
+	if polymarketPrivateKey != "" {
+		updates["polymarket_private_key"] = crypto.EncryptedString(polymarketPrivateKey)
 	}
 
 	result := s.db.Model(&Exchange{}).Where("id = ? AND user_id = ?", id, userID).Updates(updates)
@@ -312,10 +327,10 @@ func (s *ExchangeStore) CreateLegacy(userID, id, name, typ string, enabled bool,
 	hyperliquidWalletAddr, asterUser, asterSigner, asterPrivateKey string) error {
 
 	// Check if this is an old-style ID (exchange type as ID)
-	if id == "binance" || id == "bybit" || id == "okx" || id == "bitget" || id == "hyperliquid" || id == "aster" || id == "lighter" {
+	if id == "binance" || id == "bybit" || id == "okx" || id == "bitget" || id == "hyperliquid" || id == "aster" || id == "lighter" || id == "polymarket" {
 		_, err := s.Create(userID, id, "Default", enabled, apiKey, secretKey, "", testnet,
 			hyperliquidWalletAddr, true, // Default to Unified Account mode
-			asterUser, asterSigner, asterPrivateKey, "", "", "", 0)
+			asterUser, asterSigner, asterPrivateKey, "", "", "", 0, "", "", "")
 		return err
 	}
 

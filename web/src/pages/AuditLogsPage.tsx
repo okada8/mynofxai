@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Activity, Search, RefreshCw, ChevronLeft, ChevronRight, Shield } from 'lucide-react'
+import {
+  Activity,
+  Search,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+} from 'lucide-react'
 import { api } from '../lib/api'
 import { Container } from '../components/Container'
 
@@ -24,11 +31,11 @@ const getFlagEmoji = (countryCode: string) => {
   if (!countryCode) return ''
   if (countryCode === 'Local' || countryCode === 'LAN') return '🖥️'
   if (countryCode.length > 2) return '🌐' // Fallback for other non-ISO codes
-  
+
   const codePoints = countryCode
     .toUpperCase()
     .split('')
-    .map(char => 127397 + char.charCodeAt(0))
+    .map((char) => 127397 + char.charCodeAt(0))
   return String.fromCodePoint(...codePoints)
 }
 
@@ -87,25 +94,45 @@ export default function AuditLogsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-zinc-800 bg-black/20">
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">时间</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">操作者</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">动作</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">资源</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">IP/地区</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">状态</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">详情</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    时间
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    操作者
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    动作
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    资源
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    IP/地区
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    状态
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-nofx-text-muted uppercase tracking-wider">
+                    详情
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-nofx-text-muted">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-nofx-text-muted"
+                    >
                       加载中...
                     </td>
                   </tr>
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-nofx-text-muted">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-nofx-text-muted"
+                    >
                       暂无审计日志
                     </td>
                   </tr>
@@ -130,7 +157,9 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-nofx-text-muted font-mono">
                         <div className="flex flex-col">
-                          <span className="text-white">{log.resource_name || log.resource}</span>
+                          <span className="text-white">
+                            {log.resource_name || log.resource}
+                          </span>
                           {log.resource_type && (
                             <span className="text-xs text-nofx-text-muted mt-0.5 px-1.5 py-0.5 bg-white/5 rounded w-fit">
                               {log.resource_type}
@@ -140,25 +169,34 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-nofx-text-muted">
                         <div className="flex flex-col">
-                          <span className="font-mono text-white">{log.ip_address || '-'}</span>
+                          <span className="font-mono text-white">
+                            {log.ip_address || '-'}
+                          </span>
                           {log.country && (
                             <span className="text-xs text-nofx-text-muted mt-0.5 flex items-center gap-1">
-                            <span className="inline-block w-4 text-center">{getFlagEmoji(log.country)}</span>
-                            {log.country}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded text-xs font-bold border ${
-                          log.status === 'SUCCESS' 
-                            ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                            : 'bg-red-500/10 text-red-400 border-red-500/20'
-                        }`}>
+                              <span className="inline-block w-4 text-center">
+                                {getFlagEmoji(log.country)}
+                              </span>
+                              {log.country}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-bold border ${
+                            log.status === 'SUCCESS'
+                              ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                              : 'bg-red-500/10 text-red-400 border-red-500/20'
+                          }`}
+                        >
                           {log.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-nofx-text-muted max-w-xs truncate" title={log.details}>
+                      <td
+                        className="px-6 py-4 text-sm text-nofx-text-muted max-w-xs truncate"
+                        title={log.details}
+                      >
                         {log.details}
                       </td>
                     </motion.tr>
@@ -171,7 +209,8 @@ export default function AuditLogsPage() {
           {/* Pagination */}
           <div className="px-6 py-4 border-t border-zinc-800 flex items-center justify-between">
             <div className="text-sm text-nofx-text-muted">
-              显示 {offset + 1} 到 {Math.min(offset + limit, total)} 条，共 {total} 条
+              显示 {offset + 1} 到 {Math.min(offset + limit, total)} 条，共{' '}
+              {total} 条
             </div>
             <div className="flex items-center gap-2">
               <button

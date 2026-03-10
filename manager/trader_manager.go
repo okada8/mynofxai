@@ -718,6 +718,13 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 	case "indodax":
 		traderConfig.IndodaxAPIKey = string(exchangeCfg.APIKey)
 		traderConfig.IndodaxSecretKey = string(exchangeCfg.SecretKey)
+	case "polymarket":
+		traderConfig.PolymarketPrivateKey = string(exchangeCfg.PolymarketPrivateKey)
+		traderConfig.PolymarketWalletAddr = exchangeCfg.PolymarketWalletAddr
+		traderConfig.PolymarketRPCURL = exchangeCfg.PolymarketRPCURL
+		traderConfig.PolymarketAPIKey = string(exchangeCfg.APIKey)
+		traderConfig.PolymarketSecretKey = string(exchangeCfg.SecretKey)
+		traderConfig.PolymarketPassphrase = string(exchangeCfg.Passphrase)
 	}
 
 	// Set API keys based on AI model (convert EncryptedString to string)

@@ -10,9 +10,9 @@ func TestLeverageFallback(t *testing.T) {
 		name            string
 		decision        Decision
 		accountEquity   float64
-		btcEthLeverage  int
-		altcoinLeverage int
-		wantLeverage    int // Expected leverage after correction
+		btcEthLeverage  float64
+		altcoinLeverage float64
+		wantLeverage    float64 // Expected leverage after correction
 		wantError       bool
 	}{
 		{
@@ -20,15 +20,15 @@ func TestLeverageFallback(t *testing.T) {
 			decision: Decision{
 				Symbol:          "SOLUSDT",
 				Action:          "open_long",
-				Leverage:        20, // Exceeds limit
+				Leverage:        20.0, // Exceeds limit
 				PositionSizeUSD: 100,
 				StopLoss:        50,
 				TakeProfit:      200,
 			},
 			accountEquity:   100,
-			btcEthLeverage:  10,
-			altcoinLeverage: 5, // Limit 5x
-			wantLeverage:    5, // Should be corrected to 5
+			btcEthLeverage:  10.0,
+			altcoinLeverage: 5.0, // Limit 5x
+			wantLeverage:    5.0, // Should be corrected to 5
 			wantError:       false,
 		},
 		{
@@ -36,15 +36,15 @@ func TestLeverageFallback(t *testing.T) {
 			decision: Decision{
 				Symbol:          "BTCUSDT",
 				Action:          "open_long",
-				Leverage:        20, // Exceeds limit
+				Leverage:        20.0, // Exceeds limit
 				PositionSizeUSD: 1000,
 				StopLoss:        90000,
 				TakeProfit:      110000,
 			},
 			accountEquity:   100,
-			btcEthLeverage:  10, // Limit 10x
-			altcoinLeverage: 5,
-			wantLeverage:    10, // Should be corrected to 10
+			btcEthLeverage:  10.0, // Limit 10x
+			altcoinLeverage: 5.0,
+			wantLeverage:    10.0, // Should be corrected to 10
 			wantError:       false,
 		},
 		{
@@ -52,15 +52,15 @@ func TestLeverageFallback(t *testing.T) {
 			decision: Decision{
 				Symbol:          "ETHUSDT",
 				Action:          "open_short",
-				Leverage:        5, // Not exceeded
+				Leverage:        5.0, // Not exceeded
 				PositionSizeUSD: 500,
 				StopLoss:        4000,
 				TakeProfit:      3000,
 			},
 			accountEquity:   100,
-			btcEthLeverage:  10,
-			altcoinLeverage: 5,
-			wantLeverage:    5, // Stays unchanged
+			btcEthLeverage:  10.0,
+			altcoinLeverage: 5.0,
+			wantLeverage:    5.0, // Stays unchanged
 			wantError:       false,
 		},
 		{
@@ -68,15 +68,15 @@ func TestLeverageFallback(t *testing.T) {
 			decision: Decision{
 				Symbol:          "SOLUSDT",
 				Action:          "open_long",
-				Leverage:        0, // Invalid
+				Leverage:        0.0, // Invalid
 				PositionSizeUSD: 100,
 				StopLoss:        50,
 				TakeProfit:      200,
 			},
 			accountEquity:   100,
-			btcEthLeverage:  10,
-			altcoinLeverage: 5,
-			wantLeverage:    0,
+			btcEthLeverage:  10.0,
+			altcoinLeverage: 5.0,
+			wantLeverage:    0.0,
 			wantError:       true,
 		},
 	}
@@ -94,7 +94,7 @@ func TestLeverageFallback(t *testing.T) {
 
 			// If shouldn't error, check if leverage was correctly corrected
 			if !tt.wantError && tt.decision.Leverage != tt.wantLeverage {
-				t.Errorf("Leverage not corrected: got %d, want %d", tt.decision.Leverage, tt.wantLeverage)
+				t.Errorf("Leverage not corrected: got %.2f, want %.2f", tt.decision.Leverage, tt.wantLeverage)
 			}
 		})
 	}

@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
-import {
-  Plus,
-  Trash2,
-  Play,
-  Edit2,
-  Clock,
-  X,
-  Activity
-} from 'lucide-react'
+import { Plus, Trash2, Play, Edit2, Clock, X, Activity } from 'lucide-react'
 import type { Task, TraderInfo } from '../types'
 import { notify } from '../lib/notify'
 import { DeepVoidBackground } from '../components/DeepVoidBackground'
@@ -24,7 +16,7 @@ export function TasksPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -32,14 +24,14 @@ export function TasksPage() {
     trader_id: '',
     cron_expression: '@hourly',
     enabled: true,
-    params: '{}'
+    params: '{}',
   })
 
   const fetchTasks = async () => {
     setIsLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/tasks`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to fetch tasks')
       const data = await res.json()
@@ -55,7 +47,7 @@ export function TasksPage() {
   const fetchTraders = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/my-traders`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to fetch traders')
       const data = await res.json()
@@ -75,12 +67,12 @@ export function TasksPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const url = editingTask 
+      const url = editingTask
         ? `${API_BASE}/api/tasks/${editingTask.id}`
         : `${API_BASE}/api/tasks`
-      
+
       const method = editingTask ? 'PUT' : 'POST'
-      
+
       // Convert form data to API format
       const apiData = {
         name: formData.name,
@@ -88,27 +80,27 @@ export function TasksPage() {
         trader_id: formData.trader_id,
         cron_expression: formData.cron_expression,
         enabled: formData.enabled,
-        params: formData.params
+        params: formData.params,
       }
-      
+
       console.log('Sending data:', apiData) // Debug log
 
       const res = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(apiData)
+        body: JSON.stringify(apiData),
       })
 
       if (!res.ok) throw new Error('Operation failed')
-      
+
       notify.success(language === 'zh' ? '保存成功' : 'Saved successfully')
-      
+
       // Close modal first
       setIsModalOpen(false)
-      
+
       // Delay fetch to ensure DB write is committed and query returns new data
       setTimeout(() => {
         fetchTasks()
@@ -120,11 +112,11 @@ export function TasksPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm(language === 'zh' ? '确定删除吗？' : 'Are you sure?')) return
-    
+
     try {
       const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Delete failed')
       notify.success(language === 'zh' ? '删除成功' : 'Deleted successfully')
@@ -138,7 +130,7 @@ export function TasksPage() {
     try {
       const res = await fetch(`${API_BASE}/api/tasks/${id}/run`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Run failed')
       notify.success(language === 'zh' ? '已触发执行' : 'Task triggered')
@@ -155,12 +147,20 @@ export function TasksPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ enabled: !task.enabled })
+        body: JSON.stringify({ enabled: !task.enabled }),
       })
       if (!res.ok) throw new Error('Update failed')
-      notify.success(language === 'zh' ? (task.enabled ? '已禁用' : '已启用') : (task.enabled ? 'Disabled' : 'Enabled'))
+      notify.success(
+        language === 'zh'
+          ? task.enabled
+            ? '已禁用'
+            : '已启用'
+          : task.enabled
+            ? 'Disabled'
+            : 'Enabled'
+      )
       fetchTasks()
     } catch (err) {
       notify.error(language === 'zh' ? '更新失败' : 'Failed to update')
@@ -176,7 +176,7 @@ export function TasksPage() {
         trader_id: task.trader_id,
         cron_expression: task.cron_expression,
         enabled: task.enabled,
-        params: task.params
+        params: task.params,
       })
     } else {
       setEditingTask(null)
@@ -186,7 +186,7 @@ export function TasksPage() {
         trader_id: traders.length > 0 ? traders[0].trader_id : '',
         cron_expression: '@hourly',
         enabled: true,
-        params: '{}'
+        params: '{}',
       })
     }
     setIsModalOpen(true)
@@ -201,7 +201,9 @@ export function TasksPage() {
               {language === 'zh' ? '定时任务管理' : 'Scheduled Tasks'}
             </h1>
             <p className="text-nofx-text-muted mt-2">
-              {language === 'zh' ? '管理系统中的自动运行任务' : 'Manage automated tasks in the system'}
+              {language === 'zh'
+                ? '管理系统中的自动运行任务'
+                : 'Manage automated tasks in the system'}
             </p>
           </div>
           <button
@@ -215,50 +217,76 @@ export function TasksPage() {
 
         {/* Task List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tasks.map(task => (
-            <div key={task.id} className="bg-[#1E2329]/80 backdrop-blur border border-white/5 rounded-xl p-6 hover:border-nofx-gold/30 transition-all group">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="bg-[#1E2329]/80 backdrop-blur border border-white/5 rounded-xl p-6 hover:border-nofx-gold/30 transition-all group"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${task.enabled ? 'bg-nofx-gold/20 text-nofx-gold' : 'bg-zinc-800 text-zinc-500'}`}>
-                    {task.type === 'report' ? <Activity className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                  <div
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${task.enabled ? 'bg-nofx-gold/20 text-nofx-gold' : 'bg-zinc-800 text-zinc-500'}`}
+                  >
+                    {task.type === 'report' ? (
+                      <Activity className="w-5 h-5" />
+                    ) : (
+                      <Clock className="w-5 h-5" />
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-white">{task.name}</h3>
                     <div className="flex items-center gap-2 text-xs text-nofx-text-muted">
-                      <span className="bg-white/10 px-1.5 py-0.5 rounded">{task.type}</span>
+                      <span className="bg-white/10 px-1.5 py-0.5 rounded">
+                        {task.type}
+                      </span>
                       <span>{task.cron_expression}</span>
                     </div>
                   </div>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => handleToggle(task)}
+                    className={`w-10 h-5 rounded-full transition-colors flex items-center px-1 ${task.enabled ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}
+                    title={
+                      task.enabled
+                        ? language === 'zh'
+                          ? '点击禁用'
+                          : 'Click to disable'
+                        : language === 'zh'
+                          ? '点击启用'
+                          : 'Click to enable'
+                    }
+                  >
+                    <div
+                      className={`w-3 h-3 rounded-full shadow-md transition-transform transform ${task.enabled ? 'translate-x-5 bg-green-500' : 'translate-x-0 bg-red-500'}`}
+                    />
+                  </button>
+                </div>
               </div>
-              <div className="relative">
-                <button
-                  onClick={() => handleToggle(task)}
-                  className={`w-10 h-5 rounded-full transition-colors flex items-center px-1 ${task.enabled ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}
-                  title={task.enabled ? (language === 'zh' ? '点击禁用' : 'Click to disable') : (language === 'zh' ? '点击启用' : 'Click to enable')}
-                >
-                  <div className={`w-3 h-3 rounded-full shadow-md transition-transform transform ${task.enabled ? 'translate-x-5 bg-green-500' : 'translate-x-0 bg-red-500'}`} />
-                </button>
-              </div>
-            </div>
 
-            <div className="space-y-2 mb-6 text-sm text-nofx-text-muted">
+              <div className="space-y-2 mb-6 text-sm text-nofx-text-muted">
                 <div className="flex justify-between">
                   <span>Last Run:</span>
                   <span className="font-mono text-white">
-                    {task.last_run_time > 0 ? new Date(task.last_run_time).toLocaleString() : '-'}
+                    {task.last_run_time > 0
+                      ? new Date(task.last_run_time).toLocaleString()
+                      : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Next Run:</span>
                   <span className="font-mono text-nofx-gold">
-                    {task.next_run_time > 0 ? new Date(task.next_run_time).toLocaleString() : '-'}
+                    {task.next_run_time > 0
+                      ? new Date(task.next_run_time).toLocaleString()
+                      : '-'}
                   </span>
                 </div>
                 {task.trader_id && (
                   <div className="flex justify-between">
                     <span>Trader:</span>
                     <span className="font-mono text-xs truncate max-w-[150px]">
-                      {traders.find(t => t.trader_id === task.trader_id)?.trader_name || task.trader_id}
+                      {traders.find((t) => t.trader_id === task.trader_id)
+                        ?.trader_name || task.trader_id}
                     </span>
                   </div>
                 )}
@@ -288,7 +316,7 @@ export function TasksPage() {
               </div>
             </div>
           ))}
-          
+
           {tasks.length === 0 && !isLoading && (
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-nofx-text-muted border border-dashed border-white/10 rounded-xl">
               <Clock className="w-12 h-12 mb-4 opacity-50" />
@@ -303,9 +331,18 @@ export function TasksPage() {
             <div className="bg-[#1E2329] border border-nofx-gold/20 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">
-                  {editingTask ? (language === 'zh' ? '编辑任务' : 'Edit Task') : (language === 'zh' ? '新建任务' : 'New Task')}
+                  {editingTask
+                    ? language === 'zh'
+                      ? '编辑任务'
+                      : 'Edit Task'
+                    : language === 'zh'
+                      ? '新建任务'
+                      : 'New Task'}
                 </h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-gray-400 hover:text-white"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -318,12 +355,14 @@ export function TasksPage() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-nofx-gold outline-none"
                     required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-400 mb-1">
@@ -331,7 +370,9 @@ export function TasksPage() {
                     </label>
                     <select
                       value={formData.type}
-                      onChange={e => setFormData({...formData, type: e.target.value})}
+                      onChange={(e) =>
+                        setFormData({ ...formData, type: e.target.value })
+                      }
                       className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-nofx-gold outline-none"
                     >
                       <option value="report">Report (持仓报告)</option>
@@ -347,31 +388,59 @@ export function TasksPage() {
                       <input
                         type="text"
                         value={formData.cron_expression}
-                        onChange={e => setFormData({...formData, cron_expression: e.target.value})}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            cron_expression: e.target.value,
+                          })
+                        }
                         placeholder="* * * * *"
                         className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-nofx-gold outline-none"
                         required
                       />
                       <div className="relative group">
-                         <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 cursor-help">
-                           <span className="text-nofx-gold text-lg">?</span>
-                         </div>
-                         <div className="absolute right-0 bottom-full mb-2 w-64 p-4 bg-[#1E2329] border border-white/10 rounded-lg shadow-xl text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                           <p className="font-bold text-white mb-2">{language === 'zh' ? 'Cron 格式说明:' : 'Cron Format:'}</p>
-                           <ul className="space-y-1 font-mono">
-                             <li>* * * * *</li>
-                             <li>│ │ │ │ │</li>
-                             <li>│ │ │ │ └── {language === 'zh' ? '周 (0-6)' : 'Week (0-6)'}</li>
-                             <li>│ │ │ └──── {language === 'zh' ? '月 (1-12)' : 'Month (1-12)'}</li>
-                             <li>│ │ └────── {language === 'zh' ? '日 (1-31)' : 'Day (1-31)'}</li>
-                             <li>│ └──────── {language === 'zh' ? '时 (0-23)' : 'Hour (0-23)'}</li>
-                             <li>└────────── {language === 'zh' ? '分 (0-59)' : 'Minute (0-59)'}</li>
-                           </ul>
-                           <div className="mt-2 pt-2 border-t border-white/10">
-                             <p className="text-nofx-gold">@hourly = 0 * * * *</p>
-                             <p className="text-nofx-gold">@daily = 0 0 * * *</p>
-                           </div>
-                         </div>
+                        <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 cursor-help">
+                          <span className="text-nofx-gold text-lg">?</span>
+                        </div>
+                        <div className="absolute right-0 bottom-full mb-2 w-64 p-4 bg-[#1E2329] border border-white/10 rounded-lg shadow-xl text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          <p className="font-bold text-white mb-2">
+                            {language === 'zh'
+                              ? 'Cron 格式说明:'
+                              : 'Cron Format:'}
+                          </p>
+                          <ul className="space-y-1 font-mono">
+                            <li>* * * * *</li>
+                            <li>│ │ │ │ │</li>
+                            <li>
+                              │ │ │ │ └──{' '}
+                              {language === 'zh' ? '周 (0-6)' : 'Week (0-6)'}
+                            </li>
+                            <li>
+                              │ │ │ └────{' '}
+                              {language === 'zh' ? '月 (1-12)' : 'Month (1-12)'}
+                            </li>
+                            <li>
+                              │ │ └──────{' '}
+                              {language === 'zh' ? '日 (1-31)' : 'Day (1-31)'}
+                            </li>
+                            <li>
+                              │ └────────{' '}
+                              {language === 'zh' ? '时 (0-23)' : 'Hour (0-23)'}
+                            </li>
+                            <li>
+                              └──────────{' '}
+                              {language === 'zh'
+                                ? '分 (0-59)'
+                                : 'Minute (0-59)'}
+                            </li>
+                          </ul>
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <p className="text-nofx-gold">
+                              @hourly = 0 * * * *
+                            </p>
+                            <p className="text-nofx-gold">@daily = 0 0 * * *</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -383,11 +452,15 @@ export function TasksPage() {
                   </label>
                   <select
                     value={formData.trader_id}
-                    onChange={e => setFormData({...formData, trader_id: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, trader_id: e.target.value })
+                    }
                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-nofx-gold outline-none"
                   >
-                    <option value="">{language === 'zh' ? '-- 不选择 --' : '-- None --'}</option>
-                    {traders.map(t => (
+                    <option value="">
+                      {language === 'zh' ? '-- 不选择 --' : '-- None --'}
+                    </option>
+                    {traders.map((t) => (
                       <option key={t.trader_id} value={t.trader_id}>
                         {t.trader_name} ({t.ai_model})
                       </option>
@@ -402,13 +475,15 @@ export function TasksPage() {
                   <input
                     type="text"
                     value={formData.params}
-                    onChange={e => setFormData({...formData, params: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, params: e.target.value })
+                    }
                     placeholder="/path/to/script.sh"
                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-nofx-gold outline-none font-mono text-sm"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {language === 'zh' 
-                      ? '当任务类型为 Custom 时生效，填写服务器上的绝对路径' 
+                    {language === 'zh'
+                      ? '当任务类型为 Custom 时生效，填写服务器上的绝对路径'
                       : 'Required for Custom task type. Absolute path on server.'}
                   </p>
                 </div>
@@ -418,7 +493,9 @@ export function TasksPage() {
                     type="checkbox"
                     id="enabled"
                     checked={formData.enabled}
-                    onChange={e => setFormData({...formData, enabled: e.target.checked})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, enabled: e.target.checked })
+                    }
                     className="w-4 h-4 rounded border-gray-600 text-nofx-gold focus:ring-nofx-gold bg-black/40"
                   />
                   <label htmlFor="enabled" className="text-sm">
@@ -449,4 +526,3 @@ export function TasksPage() {
     </DeepVoidBackground>
   )
 }
-

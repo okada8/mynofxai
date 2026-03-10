@@ -1303,7 +1303,7 @@ func (at *AutoTrader) saveGridDecisionRecord(decision *kernel.FullDecision) {
 				Action:     d.Action,
 				Symbol:     d.Symbol,
 				Quantity:   d.Quantity,
-				Leverage:   d.Leverage,
+				Leverage:   int(d.Leverage),
 				Price:      d.Price,
 				StopLoss:   d.StopLoss,
 				TakeProfit: d.TakeProfit,

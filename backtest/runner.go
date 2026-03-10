@@ -713,7 +713,7 @@ func (r *Runner) executeDecision(dec kernel.Decision, marketData map[string]*mar
 	if r.state.MaxEquity > 0 {
 		drawdown = (r.state.MaxEquity - r.state.Equity) / r.state.MaxEquity
 	}
-	usedLeverage := r.resolveLeverage(dec.Leverage, symbol, volatility, drawdown)
+	usedLeverage := r.resolveLeverage(int(dec.Leverage), symbol, volatility, drawdown)
 
 	actionRecord := store.DecisionAction{
 		Action:    dec.Action,
@@ -886,7 +886,7 @@ func (r *Runner) calculatePositionSize(dec kernel.Decision, price float64, volum
 	sizeUSD := r.posManager.CalculatePositionSize(dec.Symbol, volume, volatility, float64(dec.Confidence)/100.0)
 
 	// Get leverage for this symbol
-	leverage := r.resolveLeverage(dec.Leverage, dec.Symbol, volatility, drawdown)
+	leverage := r.resolveLeverage(int(dec.Leverage), dec.Symbol, volatility, drawdown)
 	if leverage <= 0 {
 		leverage = 5
 	}
