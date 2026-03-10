@@ -839,6 +839,90 @@ export function AdvancedChart({
   const updateIndicators = (klineData: Kline[]) => {
     if (!chartRef.current) return
 
+    // 如果 Web Worker 可用，使用它来计算指标
+    if (window.Worker) {
+      const worker = new Worker(new URL('../workers/chartWorker.ts', import.meta.url), { type: 'module' })
+      
+      worker.onmessage = (e) => {
+        const { type, payload } = e.data
+        if (type === 'INDICATORS_CALCULATED') {
+          const results = payload
+          
+          // 清除旧指标
+          indicatorSeriesRef.current.forEach(series => {
+            chartRef.current?.removeSeries(series as any)
+          })
+          indicatorSeriesRef.current.clear()
+
+          // 渲染计算好的指标
+          indicators.forEach(indicator => {
+            if (!indicator.enabled || !chartRef.current) return
+            
+            if (indicator.id.startsWith('ma') && results[indicator.id]) {
+              const series = chartRef.current.addSeries(LineSeries, {
+                color: indicator.color,
+                lineWidth: 2,
+                title: indicator.name,
+              })
+              series.setData(results[indicator.id])
+              indicatorSeriesRef.current.set(indicator.id, series)
+            } else if (indicator.id.startsWith('ema') && results[indicator.id]) {
+              const series = chartRef.current.addSeries(LineSeries, {
+                color: indicator.color,
+                lineWidth: 2,
+                title: indicator.name,
+                lineStyle: 2, // 虚线
+              })
+              series.setData(results[indicator.id])
+              indicatorSeriesRef.current.set(indicator.id, series)
+            } else if (indicator.id === 'bb' && results[indicator.id]) {
+              const bbData = results[indicator.id] as any[]
+              
+              const upperSeries = chartRef.current.addSeries(LineSeries, {
+                color: indicator.color,
+                lineWidth: 1,
+                title: 'BB Upper',
+              })
+              upperSeries.setData(bbData.map(d => ({ time: d.time, value: d.upper })))
+
+              const middleSeries = chartRef.current.addSeries(LineSeries, {
+                color: indicator.color,
+                lineWidth: 1,
+                lineStyle: 2,
+                title: 'BB Middle',
+              })
+              middleSeries.setData(bbData.map(d => ({ time: d.time, value: d.middle })))
+
+              const lowerSeries = chartRef.current.addSeries(LineSeries, {
+                color: indicator.color,
+                lineWidth: 1,
+                title: 'BB Lower',
+              })
+              lowerSeries.setData(bbData.map(d => ({ time: d.time, value: d.lower })))
+
+              indicatorSeriesRef.current.set(indicator.id + '_upper', upperSeries)
+              indicatorSeriesRef.current.set(indicator.id + '_middle', middleSeries)
+              indicatorSeriesRef.current.set(indicator.id + '_lower', lowerSeries)
+            }
+          })
+        } else if (type === 'ERROR') {
+          console.error('[AdvancedChart] Worker error:', payload)
+        }
+        worker.terminate()
+      }
+
+      worker.postMessage({
+        type: 'CALCULATE_INDICATORS',
+        payload: {
+          klineData,
+          indicators
+        }
+      })
+      
+      return
+    }
+
+    // Fallback: 主线程计算 (原有逻辑)
     // 清除旧指标
     indicatorSeriesRef.current.forEach(series => {
       chartRef.current?.removeSeries(series as any)

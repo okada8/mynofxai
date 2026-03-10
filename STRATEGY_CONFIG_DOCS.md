@@ -5,14 +5,16 @@
 ## 1. 根对象结构 (Root)
 
 | 字段名 | 类型 | 必填 | 含义 |
-| :---
-
-
+| :--- | :--- | :--- | :--- |
 | `strategy_type` | String | 否 | 策略类型，默认为 `"ai_trading"` (AI 交易)，也可选 `"grid_trading"` (网格交易) |
 | `language` | String | 否 | 语言设置，`"zh"` (中文) 或 `"en"` (英文)，影响 AI 提示词语言 |
 | `coin_source` | Object | **是** | [币种来源配置](#2-coin_source-币种来源配置) |
 | `indicators` | Object | **是** | [技术指标配置](#3-indicators-技术指标配置) |
 | `risk_control` | Object | **是** | [风险控制配置](#4-risk_control-风险控制配置) |
+| `risk_control_enhanced` | Object | 否 | [增强风控配置](#41-risk_control_enhanced-增强风控配置) (v2.0+) |
+| `alpha_factors` | Object | 否 | [Alpha 因子配置](#9-alpha_factors-alpha-因子配置) (v2.0+) |
+| `multi_agent` | Object | 否 | [多智能体配置](#10-multi_agent-多智能体配置) (v2.0+) |
+| `macro_config` | Object | 否 | [宏观配置](#11-macro_config-宏观配置) (v3.0+) |
 | `prompt_sections` | Object | 否 | [自定义 AI 提示词段落](#5-prompt_sections-ai-提示词段落) |
 | `custom_prompt` | String | 否 | 追加的自定义提示词文本 |
 | `volatility_config` | Object | 否 | [波动率配置](#7-volatility_config-波动率配置) |
@@ -44,6 +46,7 @@
 | `gainers_top` | Integer | 涨幅榜取样数量 (如 5) |
 | `losers_top` | Integer | 跌幅榜取样数量 (如 5) |
 | `only_binance_symbols` | Boolean | 是否仅限币安交易对 |
+| `macro_screening` | Object | [宏观筛选配置](#111-macro_screening-宏观筛选配置) |
 
 ---
 
@@ -154,26 +157,6 @@
 
 | 字段名 | 类型 | 含义 | 备注 |
 | :--- | :--- | :--- | :--- |
-| `enforce_stop_loss_take_profit` | Boolean | 是否强制执行止盈止损 |
-| `manual_stop_loss_pct` | Float | 手动止损比例 (如 0.05) |
-| `manual_take_profit_pct` | Float | 手动止盈比例 (如 0.1) |
-| `limit_order_timeout_min` | Integer | 限价单超时时间 (分钟) |
-| `min_limit_order_distance_pct` | Float | 最小限价单距离百分比 |
-| `position_size_mode` | String | 仓位计算模式 (`"equity_pct"`, `"fixed_usd"`) |
-| `fixed_position_usd` | Float | 固定仓位金额 (USDT) |
-| `equity_pct` | Float | 权益百分比 (如 0.1) |
-| `max_risk_per_trade_pct` | Float | 单笔最大风险比例 |
-| `sl_atr_mult` | Float | 止损 ATR 倍数 |
-| `tp_atr_mult` | Float | 止盈 ATR 倍数 |
-| `drawdown_tp_activation` | Float | 回撤止盈激活阈值 |
-| `drawdown_tp_threshold` | Float | 回撤止盈触发阈值 |
-| `symbol_cooldown_minutes` | Integer | 币种冷却时间 (分钟) |
-| `reverse_direction` | Boolean | 是否反向交易 |
-| `max_new_entries_per_direction` | Integer | 同方向最大开仓数 |
-| `require_breakout_close_confirm` | Boolean | 是否要求突破收盘确认 |
-| `breakout_min_atr_fraction` | Float | 突破最小 ATR 分数 |
-| `timeout_exit_minutes` | Integer | 超时离场时间 (分钟) |
-| `timeout_min_progress_pct` | Float | 超时最小进度百分比 |
 | `max_positions` | Integer | 最大同时持仓数量 | **代码强制执行** |
 | `btc_eth_max_leverage` | Integer | BTC/ETH 最大开仓杠杆 | AI 参考 |
 | `altcoin_max_leverage` | Integer | 山寨币最大开仓杠杆 | AI 参考 |
@@ -183,91 +166,123 @@
 | `min_position_size` | Float | 最小开仓金额 (USDT) | **代码强制执行** (默认 12.0) |
 | `min_risk_reward_ratio` | Float | 最小盈亏比 | AI 参考 (默认 3.0) |
 | `min_confidence` | Integer | 最小开仓置信度 (0-100) | AI 参考 (默认 75) |
-| `max_positions_min` | Integer | 动态最大持仓数量下限 |
-| `max_positions_max` | Integer | 动态最大持仓数量上限 |
-| `scan_interval_base_minutes` | Integer | 基础扫描间隔 (分钟) |
-| `scan_interval_base_min` | Integer | 扫描间隔下限 (分钟) |
-| `scan_interval_base_max` | Integer | 扫描间隔上限 (分钟) |
-| `min_hold_minutes` | Integer | 最小持仓时间 (分钟) |
-| `min_close_profit_pct` | Float | 最小平仓利润百分比 |
-| `close_when_profit_exceeds_pct` | Float | 利润超过此百分比时触发平仓 |
-| `close_when_drawdown_from_peak_pct` | Float | 利润回撤超过此百分比时触发平仓 |
-| `enable_atr_risk` | Boolean | 是否启用 ATR 动态风控 |
-| `atr_period` | Integer | ATR 周期 (如 14) |
-| `atr_multiplier` | Float | ATR 倍数 (如 2.0) |
-| `enable_adaptive_atr_multiplier` | Boolean | 是否启用自适应 ATR 倍数 |
-| `atr_multiplier_min` | Float | ATR 倍数下限 |
-| `atr_multiplier_max` | Float | ATR 倍数上限 |
-| `enable_staged_take_profit` | Boolean | 是否启用阶梯止盈 |
-| `stage1_profit_pct` | Float | 第一阶段止盈比例 |
-| `stage1_close_ratio` | Float | 第一阶段平仓比例 (0.0-1.0) |
-| `stage2_profit_pct` | Float | 第二阶段止盈比例 |
-| `stage2_close_ratio` | Float | 第二阶段平仓比例 (0.0-1.0) |
-| `stage3_profit_pct` | Float | 第三阶段止盈比例 |
-| `stage3_close_ratio` | Float | 第三阶段平仓比例 (0.0-1.0) |
-| `stage4_profit_pct` | Float | 第四阶段止盈比例 |
-| `stage4_close_ratio` | Float | 第四阶段平仓比例 (0.0-1.0) |
-| `enable_sideways_time_decay_close` | Boolean | 是否启用横盘时间衰减平仓 |
-| `sideways_band_pct` | Float | 横盘判定区间比例 |
-| `enable_sideways_micro_grid` | Boolean | 是否启用横盘微网格 |
-| `sideways_min_duration_min` | Integer | 横盘最小持续时间 (分钟) |
-| `sideways_close_profit_pct` | Float | 横盘平仓利润百分比 |
-| `sideways_close_ratio` | Float | 横盘平仓比例 |
-| `use_sideways_ratio_threshold` | Boolean | 是否使用横盘比例阈值 |
-| `sideways_ratio_min` | Float | 横盘比例下限 |
-| `require_indices_deterioration_for_time_decay_close` | Boolean | 时间衰减平仓是否需要指标恶化 |
-| `time_decay_deterioration_min_signals` | Integer | 时间衰减平仓所需最少恶化信号数 |
-| `sideways_band_lower_coeff` | Float | 横盘区间下限系数 |
-| `sideways_band_upper_coeff` | Float | 横盘区间上限系数 |
-| `sideways_heat_weighted_ratio_threshold` | Float | 横盘热度加权比例阈值 |
-| `trailing_stop_mode` | String | 移动止损模式 (如 `"app"`) |
-| `trailing_stop_callback_rate_pct` | Float | 移动止损回调比例 |
-| `trailing_stop_app_min_interval_sec` | Integer | 移动止损最小间隔 (秒) |
-| `enable_dynamic_take_profit` | Boolean | 是否启用动态止盈 |
-| `enable_roe_tp_ladder` | Boolean | 是否启用 ROE 阶梯止盈 |
-| `staged_activation_peak_roe_pct` | Float | 阶梯止盈激活峰值 ROE 百分比 |
-| `dynamic_tp_ladder` | Array&lt;Object&gt; | [动态止盈阶梯配置](#82-dynamic_tp_ladder-动态止盈阶梯配置) |
-| `enable_full_auto_evolution` | Boolean | 是否启用全自动进化 |
-| `enable_auto_tune_thresholds` | Boolean | 是否启用阈值自动调整 |
-| `auto_tune_lookback_minutes` | Integer | 自动调整回溯时间 (分钟) |
-| `last_auto_tune_ms` | Integer | 上次自动调整时间戳 (毫秒) |
-| `enable_ai_evolution` | Boolean | 是否启用 AI 进化 |
-| `ai_evolution_min_trades` | Integer | AI 进化最小交易数 |
-| `evolution_mode` | String | 进化模式 (如 `"ai_primary"`) |
-| `factor_library_enabled` | Object | 因子库启用配置 (Key-Value) |
-| `default_stop_loss_min_pct` | Float | 默认最小止损比例 |
-| `enable_dynamic_stop_loss_min` | Boolean | 是否启用动态最小止损 |
-| `stop_loss_min_increase_max_pct` | Float | 止损最小增加上限比例 |
-| `risk_per_trade_pct` | Float | 单笔风险比例 |
-| `enable_dynamic_risk_per_trade` | Boolean | 是否启用动态单笔风险 |
-| `risk_per_trade_min_pct` | Float | 单笔风险比例下限 |
-| `risk_per_trade_max_pct` | Float | 单笔风险比例上限 |
-| `risk_per_trade_recent_window` | Integer | 动态风险计算窗口 |
-| `enable_trend_stop_loss` | Boolean | 是否启用趋势止损 |
-| `trend_stop_loss_min_signals` | Integer | 趋势止损最小信号数 |
-| `trend_stop_loss_trigger_loss_pct` | Float | 趋势止损触发亏损比例 |
-| `trend_stop_loss_min_hold_minutes` | Integer | 趋势止损最小持仓时间 (分钟) |
-| `take_profit_monitor_interval_sec` | Integer | 止盈监控间隔 (秒) |
-| `loss_throttle_sec` | Integer | 亏损节流时间 (秒) |
-| `unplaced_ttl_ms` | Integer | 未成交订单 TTL (毫秒) |
-| `unplaced_ttl_ms_min` | Integer | 未成交订单 TTL 下限 (毫秒) |
-| `unplaced_ttl_ms_max` | Integer | 未成交订单 TTL 上限 (毫秒) |
-| `tp_sl_order_update_cooldown_sec` | Integer | 止盈止损订单更新冷却 (秒) |
-| `entry_confidence_min` | Float | 最小入场置信度 |
-| `entry_window_min_min` | Integer | 入场窗口最小时间 (分钟) |
-| `entry_window_max_min` | Integer | 入场窗口最大时间 (分钟) |
-| `entry_urgency_now_max_min` | Integer | 紧急入场最大时间 (分钟) |
-| `entry_urgency_soon_max_min` | Integer | 快速入场最大时间 (分钟) |
-| `entry_rsi_overbought_soft` | Float | RSI 超买软阈值 |
-| `entry_rsi_overbought_hard` | Float | RSI 超买硬阈值 |
-| `entry_rsi_oversold_soft` | Float | RSI 超卖软阈值 |
-| `entry_rsi_oversold_hard` | Float | RSI 超卖硬阈值 |
-| `min_factor_pass` | Integer | 最小通过因子数 |
-| `min_reliability_for_submit` | Float | 提交所需最小可靠性 |
-| `threshold_heat_score_gold` | Float | 黄金热度评分阈值 |
-| `threshold_atr_util_green_pct` | Float | 绿色 ATR 利用率阈值 |
-| `first_layer_min_pass_count` | Integer | 第一层过滤最小通过数 |
-| `allow_trade_when_ai_fails` | Boolean | AI 失败时是否允许交易 |
+| `macro_risk_adjustments` | Map&lt;String, Object&gt; | 宏观风险调整配置 | 见下文 |
+| `enforce_stop_loss_take_profit` | Boolean | 是否强制执行止盈止损 | |
+| `manual_stop_loss_pct` | Float | 手动止损比例 (如 0.05) | |
+| `manual_take_profit_pct` | Float | 手动止盈比例 (如 0.1) | |
+| `limit_order_timeout_min` | Integer | 限价单超时时间 (分钟) | |
+| `min_limit_order_distance_pct` | Float | 最小限价单距离百分比 | |
+| `position_size_mode` | String | 仓位计算模式 (`"equity_pct"`, `"fixed_usd"`) | |
+| `fixed_position_usd` | Float | 固定仓位金额 (USDT) | |
+| `equity_pct` | Float | 权益百分比 (如 0.1) | |
+| `max_risk_per_trade_pct` | Float | 单笔最大风险比例 | |
+| `sl_atr_mult` | Float | 止损 ATR 倍数 | |
+| `tp_atr_mult` | Float | 止盈 ATR 倍数 | |
+| `drawdown_tp_activation` | Float | 回撤止盈激活阈值 | |
+| `drawdown_tp_threshold` | Float | 回撤止盈触发阈值 | |
+| `symbol_cooldown_minutes` | Integer | 币种冷却时间 (分钟) | |
+| `reverse_direction` | Boolean | 是否反向交易 | |
+| `max_new_entries_per_direction` | Integer | 同方向最大开仓数 | |
+| `require_breakout_close_confirm` | Boolean | 是否要求突破收盘确认 | |
+| `breakout_min_atr_fraction` | Float | 突破最小 ATR 分数 | |
+| `timeout_exit_minutes` | Integer | 超时离场时间 (分钟) | |
+| `timeout_min_progress_pct` | Float | 超时最小进度百分比 | |
+| `max_positions_min` | Integer | 动态最大持仓数量下限 | |
+| `max_positions_max` | Integer | 动态最大持仓数量上限 | |
+| `scan_interval_base_minutes` | Integer | 基础扫描间隔 (分钟) | |
+| `scan_interval_base_min` | Integer | 扫描间隔下限 (分钟) | |
+| `scan_interval_base_max` | Integer | 扫描间隔上限 (分钟) | |
+| `min_hold_minutes` | Integer | 最小持仓时间 (分钟) | |
+| `min_close_profit_pct` | Float | 最小平仓利润百分比 | |
+| `close_when_profit_exceeds_pct` | Float | 利润超过此百分比时触发平仓 | |
+| `close_when_drawdown_from_peak_pct` | Float | 利润回撤超过此百分比时触发平仓 | |
+| `enable_atr_risk` | Boolean | 是否启用 ATR 动态风控 | |
+| `atr_period` | Integer | ATR 周期 (如 14) | |
+| `atr_multiplier` | Float | ATR 倍数 (如 2.0) | |
+| `enable_adaptive_atr_multiplier` | Boolean | 是否启用自适应 ATR 倍数 | |
+| `atr_multiplier_min` | Float | ATR 倍数下限 | |
+| `atr_multiplier_max` | Float | ATR 倍数上限 | |
+| `enable_staged_take_profit` | Boolean | 是否启用阶梯止盈 | |
+| `stage1_profit_pct` | Float | 第一阶段止盈比例 | |
+| `stage1_close_ratio` | Float | 第一阶段平仓比例 (0.0-1.0) | |
+| `stage2_profit_pct` | Float | 第二阶段止盈比例 | |
+| `stage2_close_ratio` | Float | 第二阶段平仓比例 (0.0-1.0) | |
+| `stage3_profit_pct` | Float | 第三阶段止盈比例 | |
+| `stage3_close_ratio` | Float | 第三阶段平仓比例 (0.0-1.0) | |
+| `stage4_profit_pct` | Float | 第四阶段止盈比例 | |
+| `stage4_close_ratio` | Float | 第四阶段平仓比例 (0.0-1.0) | |
+| `enable_sideways_time_decay_close` | Boolean | 是否启用横盘时间衰减平仓 | |
+| `sideways_band_pct` | Float | 横盘判定区间比例 | |
+| `enable_sideways_micro_grid` | Boolean | 是否启用横盘微网格 | |
+| `sideways_min_duration_min` | Integer | 横盘最小持续时间 (分钟) | |
+| `sideways_close_profit_pct` | Float | 横盘平仓利润百分比 | |
+| `sideways_close_ratio` | Float | 横盘平仓比例 | |
+| `use_sideways_ratio_threshold` | Boolean | 是否使用横盘比例阈值 | |
+| `sideways_ratio_min` | Float | 横盘比例下限 | |
+| `require_indices_deterioration_for_time_decay_close` | Boolean | 时间衰减平仓是否需要指标恶化 | |
+| `time_decay_deterioration_min_signals` | Integer | 时间衰减平仓所需最少恶化信号数 | |
+| `sideways_band_lower_coeff` | Float | 横盘区间下限系数 | |
+| `sideways_band_upper_coeff` | Float | 横盘区间上限系数 | |
+| `sideways_heat_weighted_ratio_threshold` | Float | 横盘热度加权比例阈值 | |
+| `trailing_stop_mode` | String | 移动止损模式 (如 `"app"`) | |
+| `trailing_stop_callback_rate_pct` | Float | 移动止损回调比例 | |
+| `trailing_stop_app_min_interval_sec` | Integer | 移动止损最小间隔 (秒) | |
+| `enable_dynamic_take_profit` | Boolean | 是否启用动态止盈 | |
+| `enable_roe_tp_ladder` | Boolean | 是否启用 ROE 阶梯止盈 | |
+| `staged_activation_peak_roe_pct` | Float | 阶梯止盈激活峰值 ROE 百分比 | |
+| `dynamic_tp_ladder` | Array&lt;Object&gt; | [动态止盈阶梯配置](#82-dynamic_tp_ladder-动态止盈阶梯配置) | |
+| `enable_full_auto_evolution` | Boolean | 是否启用全自动进化 | |
+| `enable_auto_tune_thresholds` | Boolean | 是否启用阈值自动调整 | |
+| `auto_tune_lookback_minutes` | Integer | 自动调整回溯时间 (分钟) | |
+| `enable_ai_evolution` | Boolean | 是否启用 AI 进化 | |
+| `ai_evolution_min_trades` | Integer | AI 进化最小交易数 | |
+| `evolution_mode` | String | 进化模式 (如 `"ai_primary"`) | |
+| `factor_library_enabled` | Object | 因子库启用配置 (Key-Value) | |
+| `default_stop_loss_min_pct` | Float | 默认最小止损比例 | |
+| `enable_dynamic_stop_loss_min` | Boolean | 是否启用动态最小止损 | |
+| `stop_loss_min_increase_max_pct` | Float | 止损最小增加上限比例 | |
+| `risk_per_trade_pct` | Float | 单笔风险比例 | |
+| `enable_dynamic_risk_per_trade` | Boolean | 是否启用动态单笔风险 | |
+| `risk_per_trade_min_pct` | Float | 单笔风险比例下限 | |
+| `risk_per_trade_max_pct` | Float | 单笔风险比例上限 | |
+| `risk_per_trade_recent_window` | Integer | 动态风险计算窗口 | |
+| `enable_trend_stop_loss` | Boolean | 是否启用趋势止损 | |
+| `trend_stop_loss_min_signals` | Integer | 趋势止损最小信号数 | |
+| `trend_stop_loss_trigger_loss_pct` | Float | 趋势止损触发亏损比例 | |
+| `trend_stop_loss_min_hold_minutes` | Integer | 趋势止损最小持仓时间 (分钟) | |
+| `take_profit_monitor_interval_sec` | Integer | 止盈监控间隔 (秒) | |
+| `loss_throttle_sec` | Integer | 亏损节流时间 (秒) | |
+| `unplaced_ttl_ms` | Integer | 未成交订单 TTL (毫秒) | |
+| `unplaced_ttl_ms_min` | Integer | 未成交订单 TTL 下限 (毫秒) | |
+| `unplaced_ttl_ms_max` | Integer | 未成交订单 TTL 上限 (毫秒) | |
+| `tp_sl_order_update_cooldown_sec` | Integer | 止盈止损订单更新冷却 (秒) | |
+| `entry_confidence_min` | Float | 最小入场置信度 | |
+| `entry_window_min_min` | Integer | 入场窗口最小时间 (分钟) | |
+| `entry_window_max_min` | Integer | 入场窗口最大时间 (分钟) | |
+| `entry_urgency_now_max_min` | Integer | 紧急入场最大时间 (分钟) | |
+| `entry_urgency_soon_max_min` | Integer | 快速入场最大时间 (分钟) | |
+| `entry_rsi_overbought_soft` | Float | RSI 超买软阈值 | |
+| `entry_rsi_overbought_hard` | Float | RSI 超买硬阈值 | |
+| `entry_rsi_oversold_soft` | Float | RSI 超卖软阈值 | |
+| `entry_rsi_oversold_hard` | Float | RSI 超卖硬阈值 | |
+| `min_factor_pass` | Integer | 最小通过因子数 | |
+| `min_reliability_for_submit` | Float | 提交所需最小可靠性 | |
+| `threshold_heat_score_gold` | Float | 黄金热度评分阈值 | |
+| `threshold_atr_util_green_pct` | Float | 绿色 ATR 利用率阈值 | |
+| `first_layer_min_pass_count` | Integer | 第一层过滤最小通过数 | |
+| `allow_trade_when_ai_fails` | Boolean | AI 失败时是否允许交易 | |
+
+### 4.1 `risk_control_enhanced` (增强风控配置)
+
+| 字段名 | 类型 | 含义 |
+| :--- | :--- | :--- |
+| `daily_loss_limit_pct` | Float | 每日亏损限制百分比 |
+| `strategy_drawdown_limit_pct` | Float | 策略回撤限制百分比 |
+| `max_risk_per_trade_pct` | Float | 单笔最大风险比例 |
+| `auto_disable_on_loss` | Boolean | 触发亏损限制是否自动停用策略 |
+| `daily_loss_threshold_pct` | Float | 每日亏损阈值百分比 |
+| `risk_per_trade_mode` | String | 单笔风险模式 (`"fixed"`, `"dynamic"`) |
+| `dynamic_risk_adjustment` | Object | 动态风险调整配置 (含 `market_regime_mapping`, `confidence_adjustment`, `volatility_adjustment`) |
 
 ---
 
@@ -339,3 +354,54 @@
 | :--- | :--- | :--- |
 | `trigger_roe_pct` | Float | 触发 ROE 百分比 |
 | `target_tp_pct` | Float | 目标止盈百分比 |
+
+---
+
+## 9. `alpha_factors` (Alpha 因子配置)
+
+| 字段名 | 类型 | 含义 |
+| :--- | :--- | :--- |
+| `enable_liquidation_clusters` | Boolean | 是否启用清算簇分析 |
+| `liquidation_cluster_threshold` | Float | 清算簇阈值 |
+| `min_liquidation_usd` | Float | 最小清算金额 (USD) |
+| `enable_exchange_flow` | Boolean | 是否启用交易所资金流分析 |
+| `exchange_flow_lookback_hours` | Integer | 资金流回溯时间 (小时) |
+| `significant_flow_threshold` | Float | 显著资金流阈值 |
+| `enable_whale_wallet_tracking` | Boolean | 是否启用鲸鱼钱包追踪 |
+| `whale_threshold_usd` | Float | 鲸鱼阈值 (USD) |
+| `tracked_wallets` | Array&lt;String&gt; | 追踪的钱包地址列表 |
+| `enable_spread_expansion` | Boolean | 是否启用价差扩张分析 |
+| `spread_expansion_threshold` | Float | 价差扩张阈值 |
+| `factor_weights` | Map&lt;String, Float&gt; | 各因子权重配置 |
+
+---
+
+## 10. `multi_agent` (多智能体配置)
+
+| 字段名 | 类型 | 含义 |
+| :--- | :--- | :--- |
+| `enabled` | Boolean | 是否启用多智能体模式 |
+| `agents` | Map&lt;String, AgentConfig&gt; | 智能体列表 (如 "bull", "bear", "risk_manager") |
+| `voting_mechanism` | String | 投票机制 (`"majority"`, `"weighted"`, `"veto"`) |
+| `min_agreement_pct` | Float | 最小一致性百分比 |
+| `enable_genetic_evolution` | Boolean | 是否启用遗传进化 |
+| `evolution_config` | Object | 进化配置 (种群大小, 变异率等) |
+
+---
+
+## 11. `macro_config` (宏观配置)
+
+| 字段名 | 类型 | 含义 |
+| :--- | :--- | :--- |
+| `current_regime` | String | 当前宏观体制 (如 "inflationary_growth") |
+| `assumed_conditions` | Map&lt;String, String&gt; | 假设条件 (如 {"interest_rate": "rising"}) |
+| `regime_detection_frequency` | String | 体制检测频率 |
+| `data_sources` | Array&lt;String&gt; | 数据源列表 |
+
+### 11.1 `macro_screening` (宏观筛选配置)
+
+| 字段名 | 类型 | 含义 |
+| :--- | :--- | :--- |
+| `enable_macro_filter` | Boolean | 是否启用宏观筛选 |
+| `sector_allocation` | Map&lt;String, Float&gt; | 板块配置比例 |
+| `max_sector_exposure` | Float | 最大板块敞口 |

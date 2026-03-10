@@ -9,7 +9,7 @@ interface RiskMonitorPanelProps {
     language: Language
 }
 
-export function RiskMonitorPanel({ riskState, totalEquity, language }: RiskMonitorPanelProps) {
+export const RiskMonitorPanel = React.memo(function RiskMonitorPanel({ riskState, totalEquity, language }: RiskMonitorPanelProps) {
     if (!riskState) return null
 
     const { level, var: valueAtRisk, var_pct, max_drawdown, exposure, utilization, message } = riskState
@@ -145,7 +145,7 @@ export function RiskMonitorPanel({ riskState, totalEquity, language }: RiskMonit
             )}
         </div>
     )
-}
+})
 
 function RiskMetric({ label, value, subValue, icon, color }: { label: string, value: string, subValue?: string, icon: React.ReactNode, color: string }) {
     return (

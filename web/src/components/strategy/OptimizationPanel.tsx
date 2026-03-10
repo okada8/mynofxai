@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Play, Square, Settings, Activity, TrendingUp, AlertTriangle } from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Play, Square, Settings, Activity } from 'lucide-react'
 import { api } from '../../lib/api'
 import { toast } from 'sonner'
 import { Strategy } from '../../types'
 import { EvolutionDashboard } from '../EvolutionDashboard'
+import { useOptimizedPolling } from '../../hooks/useOptimizedPolling'
 
 interface OptimizationPanelProps {
   strategyId?: string
@@ -14,7 +15,7 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>(strategyId || '')
   const [isRunning, setIsRunning] = useState(false)
   const [taskId, setTaskId] = useState<string | null>(null)
-  const [status, setStatus] = useState<any>(null)
+  
   const [config, setConfig] = useState({
     generations: 50,
     population_size: 100,
@@ -23,7 +24,39 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
     training_period_days: 30,
   })
 
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  // Optimized polling callback
+  const fetchStatus = useCallback(async () => {
+    if (!taskId) return null
+    return await api.getOptimizationStatus(taskId)
+  }, [taskId])
+
+  const { data: status, setPollingInterval } = useOptimizedPolling(fetchStatus, {
+    enabled: isRunning && !!taskId,
+    interval: 1000,
+    onSuccess: (data) => {
+      if (data.status === 'completed' || data.status === 'failed' || data.status === 'stopped') {
+        setIsRunning(false)
+        setPollingInterval(10000) // Slow down polling when finished (or stop if we disabled enabled)
+        if (data.status === 'completed') {
+          toast.success('Optimization completed!')
+        } else if (data.status === 'failed') {
+          toast.error(`Optimization failed: ${data.error}`)
+        }
+      } else if (data.status === 'running') {
+        setPollingInterval(1000) // Ensure fast polling while running
+      }
+    },
+    onError: (err: any) => {
+      console.error('Poll error:', err)
+      // Handle 404 - Task not found
+      if (err.message && err.message.includes('404')) {
+        setIsRunning(false)
+        setTaskId(null)
+        localStorage.removeItem('optimization_task_id')
+        toast.error('Optimization task not found. It may have been stopped or expired.')
+      }
+    }
+  })
 
   useEffect(() => {
     loadStrategies()
@@ -32,9 +65,7 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
     if (savedTaskId) {
       setTaskId(savedTaskId)
       setIsRunning(true)
-      startPolling(savedTaskId)
     }
-    return () => stopPolling()
   }, [])
 
   const loadStrategies = async () => {
@@ -52,43 +83,6 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
     }
   }
 
-  const startPolling = (id: string) => {
-    stopPolling()
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        const data = await api.getOptimizationStatus(id)
-        setStatus(data)
-        if (data.status === 'completed' || data.status === 'failed' || data.status === 'stopped') {
-          setIsRunning(false)
-          stopPolling()
-          if (data.status === 'completed') {
-            toast.success('Optimization completed!')
-          } else if (data.status === 'failed') {
-            toast.error(`Optimization failed: ${data.error}`)
-          }
-        }
-      } catch (err: any) {
-        console.error('Poll error:', err)
-        // Handle 404 - Task not found (server restarted or task expired)
-        if (err.message && err.message.includes('404')) {
-          stopPolling()
-          setIsRunning(false)
-          setTaskId(null)
-          setStatus(null)
-          localStorage.removeItem('optimization_task_id')
-          toast.error('Optimization task not found. It may have been stopped or expired.')
-        }
-      }
-    }, 1000)
-  }
-
-  const stopPolling = () => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current)
-      pollIntervalRef.current = null
-    }
-  }
-
   const handleStart = async () => {
     if (!selectedStrategyId) {
       toast.error('Please select a strategy first')
@@ -103,7 +97,7 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
       })
       setTaskId(res.task_id)
       localStorage.setItem('optimization_task_id', res.task_id)
-      startPolling(res.task_id)
+      // Polling is handled by useOptimizedPolling when isRunning is true and taskId is set
       toast.success('Optimization started')
     } catch (err: any) {
       setIsRunning(false)
@@ -116,7 +110,7 @@ export function OptimizationPanel({ strategyId }: OptimizationPanelProps) {
     try {
       await api.stopOptimization(taskId)
       setIsRunning(false)
-      stopPolling()
+      // Polling will stop automatically when isRunning becomes false
       toast.success('Optimization stopped')
     } catch (err: any) {
       toast.error(err.message || 'Failed to stop optimization')

@@ -8,11 +8,19 @@ import (
 	"time"
 )
 
+// OptimizerMetrics tracks performance metrics of the optimization process
+type OptimizerMetrics struct {
+	EvaluationTime time.Duration
+	WorkersUsed    int
+	SpeedupFactor  float64
+}
+
 // Optimizer handles the genetic algorithm execution
 type Optimizer struct {
 	config   GAConfig
 	rnd      *rand.Rand
 	stopChan chan struct{}
+	Metrics  OptimizerMetrics
 }
 
 // NewOptimizer creates a new optimizer instance
@@ -127,11 +135,27 @@ func (o *Optimizer) randomChromosome() Chromosome {
 	return Chromosome{Genes: genes}
 }
 
+// adaptiveWorkerCount calculates optimal worker count based on task complexity
+func (o *Optimizer) adaptiveWorkerCount(popSize int, complexityScore float64) int {
+	base := runtime.NumCPU()
+	if complexityScore > 2.0 { // 复杂回测（多币种、长时间）
+		return base // 减少worker，避免内存压力
+	}
+	return base * 2 // 简单回测，增加并发
+}
+
 // evaluatePopulation runs backtests for all chromosomes
 func (o *Optimizer) evaluatePopulation(pop []Chromosome, bt Backtester) {
+	startTime := time.Now()
+
 	// Parallel evaluation using worker pool pattern
-	// Use 2x CPU cores for concurrency (since backtest might be IO bound or waiting)
-	numWorkers := runtime.NumCPU() * 2
+	// Use adaptive worker count based on complexity
+	complexity := o.config.ComplexityScore
+	if complexity <= 0 {
+		complexity = 1.0 // Default to normal complexity
+	}
+
+	numWorkers := o.adaptiveWorkerCount(len(pop), complexity)
 	if numWorkers > len(pop) {
 		numWorkers = len(pop)
 	}
@@ -139,26 +163,46 @@ func (o *Optimizer) evaluatePopulation(pop []Chromosome, bt Backtester) {
 		numWorkers = 1
 	}
 
+	// Update metrics
+	o.Metrics.WorkersUsed = numWorkers
+
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, numWorkers)
+
+	// Track total serial time for speedup calculation
+	var totalSerialTime time.Duration
+	var serialTimeMutex sync.Mutex
 
 	for i := range pop {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			
+
 			// Acquire token
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
 			// Execute backtest
+			taskStart := time.Now()
 			res := bt.RunStrategy(pop[idx])
+			taskDuration := time.Since(taskStart)
+
+			serialTimeMutex.Lock()
+			totalSerialTime += taskDuration
+			serialTimeMutex.Unlock()
+
 			pop[idx].Fitness = o.calculateFitness(res)
 		}(i)
 	}
 
 	wg.Wait()
-	
+
+	// Calculate metrics
+	o.Metrics.EvaluationTime = time.Since(startTime)
+	if o.Metrics.EvaluationTime > 0 {
+		o.Metrics.SpeedupFactor = float64(totalSerialTime) / float64(o.Metrics.EvaluationTime)
+	}
+
 	// Sort by fitness descending
 	sort.Slice(pop, func(i, j int) bool {
 		return pop[i].Fitness > pop[j].Fitness

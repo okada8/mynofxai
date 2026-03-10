@@ -36,6 +36,9 @@ type GAConfig struct {
 	// Optimization target
 	TargetMetric string // "sharpe", "profit", "drawdown", "win_rate"
 
+	// Complexity score for adaptive worker count (1.0 = normal, >2.0 = complex)
+	ComplexityScore float64 `json:"complexity_score"`
+
 	// Progress callback - ignore in JSON
 	OnProgress func(generation int, bestFitness float64, bestChromosome Chromosome) `json:"-"`
 }
