@@ -192,20 +192,33 @@ export function AdvancedChart({
       const klineUrl = `/api/klines?symbol=${symbol}&interval=${interval}&limit=${limit}&exchange=${exchange}`
       const result = await httpClient.get(klineUrl)
 
-      if (!result.success || !result.data) {
-        throw new Error('Failed to fetch kline data')
+      let klineData: any[] = []
+      if (Array.isArray(result)) {
+        klineData = result
+      } else if (result && result.success && Array.isArray(result.data)) {
+        klineData = result.data
+      } else {
+        throw new Error('Failed to fetch kline data: Invalid response format')
       }
 
       // 转换数据格式
-      const rawData = result.data.map((candle: any) => ({
+      const rawData = klineData.map((candle: any) => ({
         time: Math.floor(candle.openTime / 1000) as UTCTimestamp,
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-        volume: candle.volume, // 数量（BTC/股数）
-        quoteVolume: candle.quoteVolume, // 成交额（USDT/USD）
+        open: Number(candle.open),
+        high: Number(candle.high),
+        low: Number(candle.low),
+        close: Number(candle.close),
+        volume: Number(candle.volume), // 数量（BTC/股数）
+        quoteVolume: Number(candle.quoteVolume), // 成交额（USDT/USD）
       }))
+
+      // 调试日志：检查转换后的数据
+      if (rawData.length > 0) {
+        console.log('[AdvancedChart] First candle:', rawData[0])
+        console.log('[AdvancedChart] Last candle:', rawData[rawData.length - 1])
+      } else {
+        console.warn('[AdvancedChart] Converted data is empty!')
+      }
 
       // 按时间排序并去重（lightweight-charts 要求数据按时间升序且无重复）
       const sortedData = rawData.sort((a: any, b: any) => a.time - b.time)

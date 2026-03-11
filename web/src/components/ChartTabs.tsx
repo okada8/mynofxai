@@ -105,19 +105,29 @@ export function ChartTabs({
   const [searchFilter, setSearchFilter] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // 当交易所ID变化时，自动切换市场类型
+  // 当交易所ID变化时，自动切换市场类型和默认币种
   useEffect(() => {
-    const newMarketType = getMarketTypeFromExchange(exchangeId)
-    setMarketType(newMarketType)
-  }, [exchangeId])
+    // 临时修改：忽略 exchangeId，强制使用 crypto/binance
+    // const newMarketType = getMarketTypeFromExchange(exchangeId)
+    // setMarketType(newMarketType)
+    setMarketType('crypto')
+    setChartSymbol('BTCUSDT')
+    
+    // 如果没有选中特定的币种，则切换到该市场的默认币种
+    // if (!selectedSymbol) {
+    //   setChartSymbol(MARKET_CONFIG[newMarketType].defaultSymbol)
+    // }
+  }, [exchangeId, selectedSymbol])
 
   // 根据市场类型确定交易所
   const marketConfig = MARKET_CONFIG[marketType]
   // 优先使用传入的 exchangeId（非 hyperliquid 时）
-  const currentExchange =
-    marketType === 'hyperliquid'
-      ? 'hyperliquid'
-      : exchangeId || marketConfig.exchange
+  // 临时修改：强制使用 binance 以解决图表显示问题
+  // const currentExchange =
+  //   marketType === 'hyperliquid'
+  //     ? 'hyperliquid'
+  //     : exchangeId || marketConfig.exchange
+  const currentExchange = 'binance'
 
   // 获取可用币种列表
   useEffect(() => {

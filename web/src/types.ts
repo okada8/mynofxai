@@ -684,15 +684,29 @@ export interface AlphaFactorConfig {
 }
 
 // Multi-Agent Configuration (nofx 2.0)
+export interface AgentConfig {
+  enabled: boolean
+  weight: number
+  prompt_template: string
+  model_override: string
+  data_requirements: string[]
+}
+
+export interface EvolutionConfig {
+  population_size: number
+  max_generations: number
+  mutation_rate: number
+  crossover_rate: number
+  elite_count: number
+}
+
 export interface MultiAgentConfig {
   enabled: boolean
-  mode: 'debate' | 'consensus' | 'hierarchical' // Decision mode
-  agents: {
-    role: string // risk_manager, alpha_hunter, analyst, executor
-    model_id: string // AI Model ID
-    enabled: boolean
-    parameters?: Record<string, any>
-  }[]
+  agents: Record<string, AgentConfig>
+  voting_mechanism: string // "majority", "weighted", "veto"
+  min_agreement_pct: number
+  enable_genetic_evolution: boolean
+  evolution_config: EvolutionConfig
 }
 
 // Debate Arena Types
